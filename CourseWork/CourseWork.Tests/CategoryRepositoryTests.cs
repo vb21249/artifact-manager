@@ -23,14 +23,14 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new CategoryRepository(context);
             
-            var parentCategory = new Category { Name = "Parent" };
+            var parentCategory = new Category { Name = "Parent", Path = "/1" };
             context.Categories.Add(parentCategory);
             context.SaveChanges();
 
             var subcategories = new[]
             {
-                new Category { Name = "Sub1", ParentCategoryId = parentCategory.Id },
-                new Category { Name = "Sub2", ParentCategoryId = parentCategory.Id }
+                new Category { Name = "Sub1", ParentCategoryId = parentCategory.Id, Path = "/1/1" },
+                new Category { Name = "Sub2", ParentCategoryId = parentCategory.Id, Path = "/1/2" }
             };
             context.Categories.AddRange(subcategories);
             context.SaveChanges();
@@ -51,11 +51,11 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new CategoryRepository(context);
             
-            var parentCategory = new Category { Name = "Parent" };
+            var parentCategory = new Category { Name = "Parent", Path = "/1" };
             context.Categories.Add(parentCategory);
             context.SaveChanges();
 
-            var subcategory = new Category { Name = "Subcategory" };
+            var subcategory = new Category { Name = "Subcategory", Path = "/1/1" };
 
             // Act
             repository.AddSubcategory(parentCategory.Id, subcategory);
@@ -75,9 +75,9 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new CategoryRepository(context);
             
-            var parentCategory = new Category { Name = "Parent" };
+            var parentCategory = new Category { Name = "Parent", Path = "/1" };
             context.Categories.Add(parentCategory);
-            var subcategory = new Category { Name = "Sub", ParentCategoryId = parentCategory.Id };
+            var subcategory = new Category { Name = "Sub", ParentCategoryId = parentCategory.Id, Path = "/1/1" };
             context.Categories.Add(subcategory);
             context.SaveChanges();
 
@@ -97,16 +97,21 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new CategoryRepository(context);
             
-            var category = new Category { Name = "Test" };
+            var category = new Category { Name = "Test", Path = "/1" };
             context.Categories.Add(category);
             context.SaveChanges();
 
             // Act
             var result = repository.DeleteCategory(category.Id);
+            context.SaveChanges();
+
+            // Create a new context to verify deletion
+            using var newContext = new ArtifactsDbContext(options);
+            var deletedCategory = newContext.Categories.Find(category.Id);
 
             // Assert
             Assert.True(result);
-            Assert.Null(context.Categories.Find(category.Id));
+            Assert.Null(deletedCategory);
         }
 
         [Fact]
@@ -117,7 +122,7 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new CategoryRepository(context);
             
-            var category = new Category { Name = "Original" };
+            var category = new Category { Name = "Original", Path = "/1" };
             context.Categories.Add(category);
             context.SaveChanges();
 
@@ -154,7 +159,7 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new CategoryRepository(context);
             
-            context.Categories.Add(new Category { Name = "Test" });
+            context.Categories.Add(new Category { Name = "Test", Path = "/1" });
             context.SaveChanges();
 
             // Act

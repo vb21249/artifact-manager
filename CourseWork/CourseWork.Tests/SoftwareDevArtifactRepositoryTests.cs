@@ -25,7 +25,7 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new SoftwareDevArtifactRepository(context);
 
-            var category = new Category { Name = "Test Category" };
+            var category = new Category { Name = "Test Category", Path = "/1" };
             context.Categories.Add(category);
             context.SaveChanges();
 
@@ -35,24 +35,32 @@ namespace CourseWork.Tests
                 { 
                     Title = "Artifact1", 
                     CategoryId = category.Id,
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 },
                 new SoftwareDevArtifact 
                 { 
                     Title = "Artifact2", 
                     CategoryId = category.Id,
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 }
             };
-            context.Set<SoftwareDevArtifact>().AddRange(artifacts);
+            context.Artifacts.AddRange(artifacts);
             context.SaveChanges();
 
             // Act
@@ -74,13 +82,17 @@ namespace CourseWork.Tests
             var artifact = new SoftwareDevArtifact 
             { 
                 Title = "Test Artifact",
+                Description = "Test description",
                 DocumentationType = "Manual",
                 Url = "http://example.com",
                 Author = "Test Author",
                 CurrentVersion = "1.0",
-                Created = DateTime.Now
+                Created = DateTime.Now,
+                Framework = ".NET",
+                ProgrammingLanguage = "C#",
+                LicenseType = "MIT"
             };
-            context.Set<SoftwareDevArtifact>().Add(artifact);
+            context.Artifacts.Add(artifact);
             context.SaveChanges();
 
             var version = new ArtifactVersion 
@@ -95,7 +107,7 @@ namespace CourseWork.Tests
             repository.AddVersion(artifact.Id, version);
 
             // Assert
-            var updatedArtifact = context.Set<SoftwareDevArtifact>()
+            var updatedArtifact = context.Artifacts
                 .Include(a => a.Versions)
                 .First(a => a.Id == artifact.Id);
             Assert.Single(updatedArtifact.Versions);
@@ -114,36 +126,45 @@ namespace CourseWork.Tests
             {
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact1", 
-                    Framework = ".NET",
+                    Title = "Artifact1",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 },
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact2", 
+                    Title = "Artifact2",
+                    Description = "Test description",
+                    DocumentationType = "Manual",
+                    Url = "http://example.com",
+                    Author = "Test Author",
+                    CurrentVersion = "1.0",
+                    Created = DateTime.Now,
                     Framework = "Java",
-                    DocumentationType = "Manual",
-                    Url = "http://example.com",
-                    Author = "Test Author",
-                    CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    ProgrammingLanguage = "Java",
+                    LicenseType = "GPL"
                 },
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact3", 
-                    Framework = ".NET",
+                    Title = "Artifact3",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 }
             };
-            context.Set<SoftwareDevArtifact>().AddRange(artifacts);
+            context.Artifacts.AddRange(artifacts);
             context.SaveChanges();
 
             // Act
@@ -162,18 +183,22 @@ namespace CourseWork.Tests
             using var context = new ArtifactsDbContext(options);
             var repository = new SoftwareDevArtifactRepository(context);
 
-            var category = new Category { Name = "Test Category" };
+            var category = new Category { Name = "Test Category", Path = "/1" };
             context.Categories.Add(category);
 
             var artifact = new SoftwareDevArtifact 
             { 
                 Title = "Test Artifact", 
                 CategoryId = category.Id,
+                Description = "Test description",
                 DocumentationType = "Manual",
                 Url = "http://example.com",
                 Author = "Test Author",
                 CurrentVersion = "1.0",
                 Created = DateTime.Now,
+                Framework = ".NET",
+                ProgrammingLanguage = "C#",
+                LicenseType = "MIT",
                 Versions = new List<ArtifactVersion> 
                 { 
                     new ArtifactVersion 
@@ -185,7 +210,7 @@ namespace CourseWork.Tests
                     } 
                 }
             };
-            context.Set<SoftwareDevArtifact>().Add(artifact);
+            context.Artifacts.Add(artifact);
             context.SaveChanges();
 
             // Act
@@ -208,36 +233,45 @@ namespace CourseWork.Tests
             {
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact1", 
-                    ProgrammingLanguage = "C#",
+                    Title = "Artifact1",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 },
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact2", 
+                    Title = "Artifact2",
+                    Description = "Test description",
+                    DocumentationType = "Manual",
+                    Url = "http://example.com",
+                    Author = "Test Author",
+                    CurrentVersion = "1.0",
+                    Created = DateTime.Now,
+                    Framework = "Java",
                     ProgrammingLanguage = "Java",
-                    DocumentationType = "Manual",
-                    Url = "http://example.com",
-                    Author = "Test Author",
-                    CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    LicenseType = "GPL"
                 },
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact3", 
-                    ProgrammingLanguage = "C#",
+                    Title = "Artifact3",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 }
             };
-            context.Set<SoftwareDevArtifact>().AddRange(artifacts);
+            context.Artifacts.AddRange(artifacts);
             context.SaveChanges();
 
             // Act
@@ -260,36 +294,45 @@ namespace CourseWork.Tests
             {
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact1", 
-                    LicenseType = "MIT",
+                    Title = "Artifact1",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 },
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact2", 
-                    LicenseType = "GPL",
+                    Title = "Artifact2",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = "Java",
+                    ProgrammingLanguage = "Java",
+                    LicenseType = "GPL"
                 },
                 new SoftwareDevArtifact 
                 { 
-                    Title = "Artifact3", 
-                    LicenseType = "MIT",
+                    Title = "Artifact3",
+                    Description = "Test description",
                     DocumentationType = "Manual",
                     Url = "http://example.com",
                     Author = "Test Author",
                     CurrentVersion = "1.0",
-                    Created = DateTime.Now
+                    Created = DateTime.Now,
+                    Framework = ".NET",
+                    ProgrammingLanguage = "C#",
+                    LicenseType = "MIT"
                 }
             };
-            context.Set<SoftwareDevArtifact>().AddRange(artifacts);
+            context.Artifacts.AddRange(artifacts);
             context.SaveChanges();
 
             // Act

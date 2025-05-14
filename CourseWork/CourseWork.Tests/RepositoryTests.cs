@@ -22,7 +22,7 @@ namespace CourseWork.Tests
             var options = GetInMemoryDbOptions();
             using var context = new ArtifactsDbContext(options);
             var repository = new Repository<Category>(context);
-            var category = new Category { Name = "Test Category" };
+            var category = new Category { Name = "Test Category", Path = "/1" };
 
             // Act
             repository.Add(category);
@@ -40,7 +40,7 @@ namespace CourseWork.Tests
             var options = GetInMemoryDbOptions();
             using var context = new ArtifactsDbContext(options);
             var repository = new Repository<Category>(context);
-            var category = new Category { Name = "Test Category" };
+            var category = new Category { Name = "Test Category", Path = "/1" };
             context.Categories.Add(category);
             context.SaveChanges();
 
@@ -62,8 +62,8 @@ namespace CourseWork.Tests
             var repository = new Repository<Category>(context);
             var categories = new[]
             {
-                new Category { Name = "Category 1" },
-                new Category { Name = "Category 2" }
+                new Category { Name = "Category 1", Path = "/1" },
+                new Category { Name = "Category 2", Path = "/2" }
             };
             context.Categories.AddRange(categories);
             context.SaveChanges();
@@ -84,7 +84,7 @@ namespace CourseWork.Tests
             var options = GetInMemoryDbOptions();
             using var context = new ArtifactsDbContext(options);
             var repository = new Repository<Category>(context);
-            var category = new Category { Name = "Original Name" };
+            var category = new Category { Name = "Original Name", Path = "/1" };
             context.Categories.Add(category);
             context.SaveChanges();
 
@@ -105,7 +105,7 @@ namespace CourseWork.Tests
             var options = GetInMemoryDbOptions();
             using var context = new ArtifactsDbContext(options);
             var repository = new Repository<Category>(context);
-            var category = new Category { Name = "Test Category" };
+            var category = new Category { Name = "Test Category", Path = "/1" };
             context.Categories.Add(category);
             context.SaveChanges();
 
