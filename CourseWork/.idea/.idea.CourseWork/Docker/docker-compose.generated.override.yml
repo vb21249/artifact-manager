@@ -1,0 +1,21 @@
+# This is a generated file. Not intended for manual editing.
+version: "3.8"
+services:
+  api:
+    build:
+      context: "D:\\Programming\\C#\\CourseWork\\CourseWork"
+      dockerfile: "Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net9.0/CourseWork.dll"
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "coursework:dev"
+    ports: []
+    volumes:
+    - "D:\\Programming\\C#\\CourseWork\\CourseWork:/app:rw"
+    - "D:\\Programming\\C#\\CourseWork:/src:rw"
+    - "C:\\Users\\vbogd\\.nuget\\packages:/root/.nuget/packages"
+    working_dir: "/app"
