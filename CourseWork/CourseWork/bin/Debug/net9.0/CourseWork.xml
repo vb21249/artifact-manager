@@ -1,0 +1,208 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CourseWork</name>
+    </assembly>
+    <members>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.GetArtifacts(CourseWork.API.DTOs.ArtifactSearchDto)">
+            <summary>
+            Gets all artifacts with optional filtering and sorting
+            </summary>
+            <param name="searchDto">Search and filter criteria</param>
+            <returns>List of artifacts matching the criteria</returns>
+            <response code="200">Returns the list of artifacts</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.GetArtifact(System.Int32)">
+            <summary>
+            Gets a specific artifact by id
+            </summary>
+            <param name="id">The ID of the artifact</param>
+            <returns>The artifact details</returns>
+            <response code="200">Returns the artifact</response>
+            <response code="404">If the artifact is not found</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.CreateArtifact(CourseWork.API.DTOs.CreateArtifactDto)">
+            <summary>
+            Creates a new artifact
+            </summary>
+            <param name="dto">The artifact creation data</param>
+            <returns>The created artifact</returns>
+            <response code="201">Returns the newly created artifact</response>
+            <response code="400">If the artifact data is invalid</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.UpdateArtifact(System.Int32,CourseWork.API.DTOs.UpdateArtifactDto)">
+            <summary>
+            Updates an artifact
+            </summary>
+            <param name="id">The ID of the artifact to update</param>
+            <param name="dto">The artifact update data</param>
+            <returns>No content</returns>
+            <response code="204">If the artifact was updated</response>
+            <response code="404">If the artifact was not found</response>
+            <response code="400">If the update data is invalid</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.DeleteArtifact(System.Int32)">
+            <summary>
+            Deletes an artifact
+            </summary>
+            <param name="id">The ID of the artifact to delete</param>
+            <returns>No content</returns>
+            <response code="204">If the artifact was deleted</response>
+            <response code="404">If the artifact was not found</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.AddVersion(System.Int32,CourseWork.API.DTOs.CreateArtifactVersionDto)">
+            <summary>
+            Adds a new version to an artifact
+            </summary>
+            <param name="id">The ID of the artifact</param>
+            <param name="dto">The version data</param>
+            <returns>The created version</returns>
+            <response code="201">Returns the newly created version</response>
+            <response code="404">If the artifact is not found</response>
+            <response code="400">If the version data is invalid</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.ArtifactsController.GetVersionHistory(System.Int32)">
+            <summary>
+            Gets the version history of an artifact
+            </summary>
+            <param name="id">The ID of the artifact</param>
+            <returns>List of versions</returns>
+            <response code="200">Returns the list of versions</response>
+            <response code="404">If the artifact is not found</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.CategoriesController.GetCategories">
+            <summary>
+            Gets all categories with their hierarchy
+            </summary>
+            <returns>List of categories with their subcategories</returns>
+            <response code="200">Returns the list of categories</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.CategoriesController.GetCategory(System.Int32)">
+            <summary>
+            Gets a specific category by id
+            </summary>
+            <param name="id">The ID of the category</param>
+            <returns>The category details</returns>
+            <response code="200">Returns the category</response>
+            <response code="404">If the category is not found</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.CategoriesController.CreateCategory(CourseWork.API.DTOs.CreateCategoryDto)">
+            <summary>
+            Creates a new category
+            </summary>
+            <param name="dto">The category creation data</param>
+            <returns>The created category</returns>
+            <response code="201">Returns the newly created category</response>
+            <response code="400">If the category data is invalid</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.CategoriesController.UpdateCategory(System.Int32,CourseWork.API.DTOs.UpdateCategoryDto)">
+            <summary>
+            Updates a category
+            </summary>
+            <param name="id">The ID of the category to update</param>
+            <param name="dto">The category update data</param>
+            <returns>No content</returns>
+            <response code="204">If the category was updated</response>
+            <response code="404">If the category was not found</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.CategoriesController.DeleteCategory(System.Int32)">
+            <summary>
+            Deletes a category
+            </summary>
+            <param name="id">The ID of the category to delete</param>
+            <returns>No content</returns>
+            <response code="204">If the category was deleted</response>
+            <response code="404">If the category was not found</response>
+            <response code="400">If the category is not empty</response>
+        </member>
+        <member name="M:CourseWork.API.Controllers.CategoriesController.RearrangeCategory(System.Int32,CourseWork.API.DTOs.RearrangeCategoryDto)">
+            <summary>
+            Rearranges a category within its level
+            </summary>
+            <param name="id">The ID of the category to rearrange</param>
+            <param name="dto">The new position data</param>
+            <returns>No content</returns>
+            <response code="204">If the category was rearranged</response>
+            <response code="404">If the category was not found</response>
+            <response code="400">If the new position is invalid</response>
+        </member>
+        <member name="T:CourseWork.Application.Interfaces.ICategoryRepository">
+            <summary>
+            Interface for category-specific repository operations.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Application.Interfaces.IRepository`1">
+            <summary>
+            Generic repository interface defining basic CRUD operations.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Application.Interfaces.ISoftwareDevArtifactRepository">
+            <summary>
+            Interface for software development artifact-specific repository operations.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Application.Interfaces.IUnitOfWork">
+            <summary>
+            Interface for the Unit of Work pattern implementation.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Domain.Entities.ArtifactSearchQuery">
+            <summary>
+            Represents search criteria for filtering software development artifacts.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Domain.Entities.ArtifactVersion">
+            <summary>
+            Represents a specific version of a software development artifact.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Domain.Entities.Category">
+            <summary>
+            Represents a category in the software development artifacts hierarchy.
+            Categories can have subcategories and contain software development artifacts.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Domain.Entities.SoftwareDevArtifact">
+            <summary>
+            Represents a software development artifact with version history.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Infrastructure.Persistence.ArtifactsDbContext">
+            <summary>
+            Entity Framework DbContext for the Software Development Artifacts Management System.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Infrastructure.Persistence.CategoryRepository">
+            <summary>
+            Implementation of the category repository with specific category-related operations.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Infrastructure.Persistence.Repository`1">
+            <summary>
+            Generic repository implementation using Entity Framework Core.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Infrastructure.Persistence.SoftwareDevArtifactRepository">
+            <summary>
+            Implementation of the software development artifact repository with specific artifact-related operations.
+            </summary>
+        </member>
+        <member name="T:CourseWork.Infrastructure.Persistence.UnitOfWork">
+            <summary>
+            Implementation of the Unit of Work pattern to manage transactions and repository instances.
+            </summary>
+        </member>
+        <member name="T:CourseWork.src.Infrastructure.Persistence.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:CourseWork.src.Infrastructure.Persistence.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CourseWork.src.Infrastructure.Persistence.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:CourseWork.src.Infrastructure.Persistence.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

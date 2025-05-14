@@ -1,0 +1,193 @@
+@CourseWork_HostAddress = http://localhost:5034
+
+@baseUrl = http://localhost:8080
+
+### Get all categories
+GET {{baseUrl}}/api/categories
+
+### Create root category (Software Development)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Software Development",
+    "parentCategoryId": null
+}
+
+### Create root category (Hardware)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Hardware",
+    "parentCategoryId": null
+}
+
+### Create Web Development subcategory
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Web Development",
+    "parentCategoryId": 1
+}
+
+### Create Frontend Development subcategory
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Frontend Development",
+    "parentCategoryId": 3
+}
+
+### Create Backend Development subcategory
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Backend Development",
+    "parentCategoryId": 3
+}
+
+### Create Mobile Development subcategory
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Mobile Development",
+    "parentCategoryId": 1
+}
+
+### Create iOS Development subcategory
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "iOS Development",
+    "parentCategoryId": 6
+}
+
+### Create Android Development subcategory
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Android Development",
+    "parentCategoryId": 6
+}
+
+### Get specific category with all subcategories
+GET {{baseUrl}}/api/categories/1
+
+### Get specific subcategory
+GET {{baseUrl}}/api/categories/3
+
+### Get leaf category (no subcategories)
+GET {{baseUrl}}/api/categories/4
+
+### Update category name
+PUT {{baseUrl}}/api/categories/4
+Content-Type: application/json
+
+{
+    "name": "Frontend Engineering",
+    "parentCategoryId": 3
+}
+
+### Move category to different parent
+PUT {{baseUrl}}/api/categories/7
+Content-Type: application/json
+
+{
+    "name": "iOS Development",
+    "parentCategoryId": 3
+}
+
+### Try to delete non-empty category (should fail)
+DELETE {{baseUrl}}/api/categories/3
+
+### Delete leaf category
+DELETE {{baseUrl}}/api/categories/8
+
+### Error Cases ###
+
+### Create category with empty name (should fail)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "",
+    "parentCategoryId": 1
+}
+
+### Create category with very long name (should fail)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "This is a very very very very very very very very very very very very very very very very very very very very long category name that should exceed the maximum length",
+    "parentCategoryId": 1
+}
+
+### Create category with non-existent parent (should fail)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Invalid Category",
+    "parentCategoryId": 999
+}
+
+### Get non-existent category (should return 404)
+GET {{baseUrl}}/api/categories/999
+
+### Update non-existent category (should return 404)
+PUT {{baseUrl}}/api/categories/999
+Content-Type: application/json
+
+{
+    "name": "Updated Name",
+    "parentCategoryId": 1
+}
+
+### Delete non-existent category (should return 404)
+DELETE {{baseUrl}}/api/categories/999
+
+### Create circular reference (should fail)
+PUT {{baseUrl}}/api/categories/1
+Content-Type: application/json
+
+{
+    "name": "Software Development",
+    "parentCategoryId": 3
+}
+
+### Special Cases ###
+
+### Create category with special characters
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "C++ & .NET Development!@#$",
+    "parentCategoryId": 1
+}
+
+### Create category with Unicode characters
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "开发",
+    "parentCategoryId": 1
+}
+
+### Create deeply nested category structure
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+    "name": "Level 1",
+    "parentCategoryId": null
+}
