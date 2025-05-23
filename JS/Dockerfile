@@ -1,20 +1,17 @@
-# Use the official .NET SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+# Use Node.js as base image
+FROM node:18-alpine
+
+# Set working directory
 WORKDIR /app
 
-# Copy the solution and project files
+# Install a simple HTTP server
+RUN npm install -g http-server
+
+# Copy project files
 COPY . .
 
-# Build and publish the application
-RUN dotnet publish -c Release -o out
+# Expose port 3000
+EXPOSE 3000
 
-# Create the runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:7.0
-WORKDIR /app
-COPY --from=build /app/out .
-
-# Expose the port
-EXPOSE 8080
-
-# Set the entry point
-ENTRYPOINT ["dotnet", "API.dll"]
+# Start the server
+CMD ["http-server", "public", "-p", "3000", "--cors"]

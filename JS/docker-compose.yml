@@ -1,10 +1,19 @@
 version: '3.8'
 
 services:
-  api:
+  frontend-2-iteration:
     build: .
     ports:
-      - "8080:8080"
+      - "3000:3000"
+    volumes:
+      - ./public:/app/public
     environment:
-      - ASPNETCORE_URLS=http://+:8080
-      - ASPNETCORE_ENVIRONMENT=Development
+      - NODE_ENV=development
+  frontend-3-iteration:
+    build: .
+    ports:
+      - "4000:3000"
+    volumes:
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=development
