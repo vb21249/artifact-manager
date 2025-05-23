@@ -214,6 +214,111 @@ namespace CourseWork.API.Controllers
             return Ok(versions);
         }
 
+        /// <summary>
+        /// Searches artifacts by text query
+        /// </summary>
+        /// <param name="query">The search query</param>
+        /// <returns>List of matching artifacts</returns>
+        /// <response code="200">Returns the list of matching artifacts</response>
+        [HttpGet("search")]
+        [ProducesResponseType(typeof(IEnumerable<ArtifactDto>), 200)]
+        public IActionResult SearchArtifacts([FromQuery] string query)
+        {
+            try
+            {
+                var artifacts = _unitOfWork.SoftwareDevArtifactRepository.Search(query);
+                return Ok(artifacts.Select(MapToArtifactDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while searching artifacts", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Filters artifacts by programming language
+        /// </summary>
+        /// <param name="language">The programming language to filter by</param>
+        /// <returns>List of matching artifacts</returns>
+        /// <response code="200">Returns the filtered list of artifacts</response>
+        [HttpGet("filter/language")]
+        [ProducesResponseType(typeof(IEnumerable<ArtifactDto>), 200)]
+        public IActionResult FilterByLanguage([FromQuery] string language)
+        {
+            try
+            {
+                var artifacts = _unitOfWork.SoftwareDevArtifactRepository.FilterByProgrammingLanguage(language);
+                return Ok(artifacts.Select(MapToArtifactDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while filtering artifacts", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Filters artifacts by framework
+        /// </summary>
+        /// <param name="framework">The framework to filter by</param>
+        /// <returns>List of matching artifacts</returns>
+        /// <response code="200">Returns the filtered list of artifacts</response>
+        [HttpGet("filter/framework")]
+        [ProducesResponseType(typeof(IEnumerable<ArtifactDto>), 200)]
+        public IActionResult FilterByFramework([FromQuery] string framework)
+        {
+            try
+            {
+                var artifacts = _unitOfWork.SoftwareDevArtifactRepository.FilterByFramework(framework);
+                return Ok(artifacts.Select(MapToArtifactDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while filtering artifacts", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Filters artifacts by license type
+        /// </summary>
+        /// <param name="licenseType">The license type to filter by</param>
+        /// <returns>List of matching artifacts</returns>
+        /// <response code="200">Returns the filtered list of artifacts</response>
+        [HttpGet("filter/license")]
+        [ProducesResponseType(typeof(IEnumerable<ArtifactDto>), 200)]
+        public IActionResult FilterByLicense([FromQuery] string licenseType)
+        {
+            try
+            {
+                var artifacts = _unitOfWork.SoftwareDevArtifactRepository.FilterByLicenseType(licenseType);
+                return Ok(artifacts.Select(MapToArtifactDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while filtering artifacts", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Advanced search with combined filtering criteria
+        /// </summary>
+        /// <param name="query">The search and filter criteria</param>
+        /// <returns>List of matching artifacts</returns>
+        /// <response code="200">Returns the filtered list of artifacts</response>
+        [HttpGet("advanced-search")]
+        [ProducesResponseType(typeof(IEnumerable<ArtifactDto>), 200)]
+        public IActionResult AdvancedSearch([FromQuery] ArtifactSearchQuery query)
+        {
+            try
+            {
+                var artifacts = _unitOfWork.SoftwareDevArtifactRepository.FilterByCombinedCriteria(query);
+                return Ok(artifacts.Select(MapToArtifactDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while performing advanced search", error = ex.Message });
+            }
+        }
+
         private static ArtifactDto MapToArtifactDto(SoftwareDevArtifact artifact)
         {
             return new ArtifactDto
