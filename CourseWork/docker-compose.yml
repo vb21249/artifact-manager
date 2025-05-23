@@ -1,49 +1,37 @@
 version: '3.8'
 
 services:
-  webapp:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8080:80"
+      - "8081:443"
+    depends_on:
+      - sqlserver
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db;Database=ArtifactsDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SoftwareArtifactsDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+    networks:
+      - artifacts_network
 
-  db:
+  sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Your_password123
-      - MSSQL_PID=Express
+      - SA_PASSWORD=YourStrong@Passw0rd
     ports:
       - "1433:1433"
     volumes:
-      - mssql_data:/var/opt/mssql
-    command: 
-      - /bin/bash
-      - -c
-      - |
-        /opt/mssql/bin/sqlservr &
-        sleep 30
-        curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/trusted.gpg.d/microsoft.asc
-        curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | tee /etc/apt/sources.list.d/mssql-release.list
-        apt-get update
-        ACCEPT_EULA=Y apt-get install -y mssql-tools18
-        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Your_password123 -Q "CREATE DATABASE ArtifactsDb"
-        sleep infinity
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Your_password123 -Q 'SELECT 1' || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - artifacts_network
 
 volumes:
-  mssql_data:
+  sqlserver_data:
+    driver: local
+
+networks:
+  artifacts_network:
+    driver: bridge
