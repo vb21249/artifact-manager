@@ -1,0 +1,686 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tree-container {
+    margin-top: 20px;
+}
+
+.new-root-btn {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.new-root-btn:hover {
+    background-color: #45a049;
+}
+
+.tree-node {
+    margin: 5px 0;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.tree-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
+}
+
+.node-name {
+    flex-grow: 1;
+    font-weight: bold;
+}
+
+.node-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.node-actions button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+
+.node-actions button:hover {
+    background-color: #e0e0e0;
+}
+
+.children {
+    margin-left: 20px;
+    display: none;
+}
+
+.children.expanded {
+    display: block;
+}
+
+.expand-collapse {
+    cursor: pointer;
+    width: 20px;
+    text-align: center;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+.drag-over {
+    border: 2px dashed #666;
+}
+
+.tree-node:hover {
+    background-color: #f0f0f0;
+}
+
+.tree-node.dragging {
+    opacity: 0.5;
+}
+
+.tree-node.drag-over {
+    border: 2px dashed #666;
+}
+
+.tree-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.expand-collapse {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.node-name {
+    flex-grow: 1;
+}
+
+.node-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.tree-node:hover .node-actions {
+    opacity: 1;
+}
+
+.node-actions button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    color: white;
+    transition: filter 0.2s;
+}
+
+.node-actions button:nth-child(1) { /* Edit */
+    background-color: #2196F3;
+}
+
+.node-actions button:nth-child(2) { /* Delete */
+    background-color: #f44336;
+}
+
+.node-actions button:nth-child(3) { /* Add Category */
+    background-color: #4CAF50;
+}
+
+.node-actions button:nth-child(4) { /* Add Artifact */
+    background-color: #9c27b0;
+}
+
+.node-actions button:hover {
+    filter: brightness(90%);
+}
+
+.children {
+    margin-left: 24px;
+    display: none;
+    border-left: 2px solid #e0e0e0;
+    margin-top: 4px;
+    padding-left: 12px;
+}
+
+.children.expanded {
+    display: block;
+}
+
+/* Category Tree Styles */
+.add-root-btn {
+    display: block;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.add-root-btn:hover {
+    background-color: #45a049;
+}
+
+.category-wrapper {
+    margin-bottom: 8px;
+}
+
+.category {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.category:hover {
+    border-color: #aaa;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    gap: 8px;
+}
+
+.toggle-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    color: #666;
+}
+
+.category-title {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+.category-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.category:hover .category-actions {
+    opacity: 1;
+}
+
+.category-actions button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    color: white;
+    transition: filter 0.2s;
+}
+
+.category-actions button:hover {
+    filter: brightness(90%);
+}
+
+/* Button colors */
+.category-actions button:nth-child(1) { /* Add Subcategory */
+    background-color: #4CAF50;
+}
+
+.category-actions button:nth-child(2) { /* Add Artifact */
+    background-color: #9c27b0;
+}
+
+.category-actions button:nth-child(3) { /* Edit */
+    background-color: #2196F3;
+}
+
+.category-actions button:nth-child(4) { /* Delete */
+    background-color: #f44336;
+}
+
+.category-content {
+    padding-left: 20px;
+    border-left: 2px solid #e0e0e0;
+    margin: 4px 0 4px 10px;
+}
+
+.category-content.hidden {
+    display: none;
+}
+
+/* Artifact Styles */
+.artifacts-container {
+    margin-top: 8px;
+}
+
+.artifact {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-left: 3px solid #9c27b0;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.artifact:hover {
+    background-color: #f3f4f5;
+}
+
+.artifact-title {
+    flex-grow: 1;
+    font-size: 14px;
+    color: #333;
+}
+
+.artifact-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.artifact:hover .artifact-actions {
+    opacity: 1;
+}
+
+.artifact-actions button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    color: white;
+    transition: filter 0.2s;
+}
+
+.artifact-actions button:hover {
+    filter: brightness(90%);
+}
+
+/* Artifact button colors */
+.artifact-actions button:nth-child(1) { /* View */
+    background-color: #2196F3;
+}
+
+.artifact-actions button:nth-child(2) { /* Edit */
+    background-color: #ff9800;
+}
+
+.artifact-actions button:nth-child(3) { /* Delete */
+    background-color: #f44336;
+}
+
+.artifact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.artifact-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.delete-artifact {
+    padding: 4px 8px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-artifact:hover {
+    background-color: #d32f2f;
+}
+
+/* Artifact Node Styles */
+.artifact-node {
+    background-color: #f8f9fa;
+    border-left: 3px solid #9c27b0;
+    margin: 4px 0;
+}
+
+.artifact-node .node-name {
+    font-size: 14px;
+    color: #333;
+}
+
+.artifact-node .expand-collapse {
+    color: #9c27b0;
+    cursor: pointer;
+}
+
+.artifact-node:hover {
+    background-color: #f3f4f5;
+}
+
+.artifact-node .node-actions button {
+    background-color: #9c27b0;
+}
+
+.artifact-node .node-actions button:first-child { /* View */
+    background-color: #2196F3;
+}
+
+.artifact-node .node-actions button:last-child { /* Delete */
+    background-color: #f44336;
+}
+
+/* Artifact Tooltip */
+.artifact-tooltip {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 300px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.artifact-node:hover .artifact-tooltip {
+    display: block;
+    left: 100%;
+    top: 0;
+    margin-left: 8px;
+}
+
+.artifact-tooltip strong {
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.artifact-tooltip em {
+    color: #666;
+    font-style: italic;
+}
+
+/* Artifact Dialog Styles */
+.artifact-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.dialog h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.dialog-buttons button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dialog-buttons button[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.dialog-buttons button.cancel {
+    background-color: #f44336;
+    color: white;
+}
+
+.dialog-buttons button:hover {
+    filter: brightness(90%);
+}
+
+.dialog-content {
+    background-color: white;
+    padding: 24px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dialog-content h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Error Message Styles */
+.error-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px 20px;
+    border-radius: 4px;
+    border-left: 4px solid #c62828;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    max-width: 400px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.artifacts-list {
+    margin-top: 10px;
+    margin-left: 25px;
+}
+
+.artifact-item {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.artifact-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.artifact-header:hover {
+    background-color: #f1f3f5;
+}
+
+.artifact-title {
+    flex-grow: 1;
+    margin: 0 10px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.artifact-details {
+    padding: 12px;
+    border-top: 1px solid #e9ecef;
+}
+
+.artifact-details.collapsed {
+    display: none;
+}
+
+.artifact-description {
+    margin: 0 0 12px 0;
+    color: #666;
+}
+
+.artifact-info {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.artifact-tech {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+}
+
+.artifact-info span,
+.artifact-tech span {
+    background-color: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    color: #495057;
+    font-size: 0.9em;
+}
+
+.artifact-info a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.artifact-info a:hover {
+    text-decoration: underline;
+}
+
+.delete-artifact {
+    background-color: transparent;
+    color: #dc3545;
+    border: none;
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+    transition: all 0.2s;
+}
+
+.delete-artifact:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.expand-collapse {
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    color: #6c757d;
+    user-select: none;
+}
