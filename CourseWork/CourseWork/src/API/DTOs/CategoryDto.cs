@@ -11,6 +11,7 @@ namespace CourseWork.API.DTOs
         public int Position { get; set; }
         public string Path { get; set; }
         public List<CategoryDto> Subcategories { get; set; } = new();
+        public List<ArtifactDto> Artifacts { get; set; } = new();
         public int ArtifactsCount { get; set; }
     }
 
@@ -20,6 +21,7 @@ namespace CourseWork.API.DTOs
         [StringLength(100, MinimumLength = 3)]
         public string Name { get; set; }
         public int? ParentCategoryId { get; set; }
+        public int Position { get; set; }
     }
 
     public class UpdateCategoryDto
@@ -27,6 +29,7 @@ namespace CourseWork.API.DTOs
         [Required]
         [StringLength(100, MinimumLength = 3)]
         public string Name { get; set; }
+        public int Position { get; set; }
     }
 
     public class RearrangeCategoryDto

@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import CategoryTreeComponent from './CategoryTree';
+import CategoryTree from './CategoryTree';
 import AddCategoryDialog from './AddCategoryDialog';
 import DeleteCategoryDialog from './DeleteCategoryDialog';
-import { Box, Typography, Paper, CircularProgress, Alert, Button, Stack } from '@mui/material';
+import { Box, Typography, Paper, CircularProgress, Alert, Button } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { categoryService, Category } from '../../services/categoryService';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import AddArtifactDialog from './AddArtifactDialog';
+import DeleteArtifactDialog from './DeleteArtifactDialog';
+import { artifactService } from '../../services/artifactService';
 
 const CategoryTreeDemo: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,6 +21,12 @@ const CategoryTreeDemo: React.FC = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [addArtifactDialogOpen, setAddArtifactDialogOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [deleteArtifactDialogOpen, setDeleteArtifactDialogOpen] = useState(false);
+  const [artifactToDelete, setArtifactToDelete] = useState<{id: number, name: string} | null>(null);
+  const [deleteArtifactLoading, setDeleteArtifactLoading] = useState(false);
+  const [deleteArtifactError, setDeleteArtifactError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -62,8 +73,38 @@ const CategoryTreeDemo: React.FC = () => {
     }
   };
 
+  const handleAddArtifact = (categoryId: number) => {
+    setSelectedCategoryId(categoryId);
+    setAddArtifactDialogOpen(true);
+  };
+
+  const handleDeleteArtifact = (artifactId: number, artifactName: string) => {
+    setArtifactToDelete({ id: artifactId, name: artifactName });
+    setDeleteArtifactDialogOpen(true);
+    setDeleteArtifactError(null);
+  };
+
+  const handleConfirmDeleteArtifact = async () => {
+    if (!artifactToDelete) return;
+
+    setDeleteArtifactLoading(true);
+    setDeleteArtifactError(null);
+
+    try {
+      await artifactService.deleteArtifact(artifactToDelete.id);
+      await loadCategories();
+      setDeleteArtifactDialogOpen(false);
+      setArtifactToDelete(null);
+    } catch (err) {
+      setDeleteArtifactError('Failed to delete artifact.');
+    } finally {
+      setDeleteArtifactLoading(false);
+    }
+  };
+
   const handleCategoryMove = async (sourceId: string, targetId: string) => {
     try {
+      console.log('Moving category:', { sourceId, targetId });
       const sourceCat = findCategory(parseInt(sourceId), categories);
       const targetCat = findCategory(parseInt(targetId), categories);
       
@@ -71,23 +112,54 @@ const CategoryTreeDemo: React.FC = () => {
         throw new Error('Category not found');
       }
 
-      // If moving to a new parent
-      if (sourceCat.parentCategoryId !== targetCat.id) {
-        await categoryService.updateCategory(parseInt(sourceId), {
-          name: sourceCat.name,
-        });
+      // Don't allow moving a category into itself or its children
+      if (isDescendant(targetCat, parseInt(sourceId))) {
+        throw new Error('Cannot move a category into itself or its children');
       }
 
-      // Update position within the new parent's children
-      const newPosition = targetCat.subcategories ? targetCat.subcategories.length : 0;
-      await categoryService.rearrangeCategory(parseInt(sourceId), {
-        newPosition: newPosition,
+      // First update parent
+      await categoryService.updateCategory(parseInt(sourceId), {
+        name: sourceCat.name,
+        parentCategoryId: parseInt(targetId)
       });
 
-      // Reload categories to get the updated structure
+      // Get fresh data after parent update
+      const updatedCategories = await categoryService.getCategories();
+      const updatedTarget = findCategory(parseInt(targetId), updatedCategories);
+      
+      if (!updatedTarget) {
+        throw new Error('Target category not found after update');
+      }
+
+      // Calculate position based on current siblings
+      const siblings = updatedTarget.subcategories || [];
+      const newPosition = siblings.length;
+
+      // Update position
+      await categoryService.rearrangeCategory(parseInt(sourceId), {
+        newPosition: newPosition
+      });
+
       await loadCategories();
     } catch (err) {
+      console.error('Move error:', err);
       setError('Failed to move category. Please try again.');
+    }
+  };
+
+  const handleArtifactMove = async (artifactId: number, targetCategoryId: number) => {
+    try {
+      console.log('Moving artifact:', { artifactId, targetCategoryId });
+      
+      // Update artifact's category
+      await artifactService.updateArtifact(artifactId, {
+        categoryId: targetCategoryId
+      });
+
+      await loadCategories();
+    } catch (err) {
+      console.error('Move artifact error:', err);
+      setError('Failed to move artifact. Please try again.');
     }
   };
 
@@ -106,6 +178,18 @@ const CategoryTreeDemo: React.FC = () => {
     return null;
   };
 
+  const isDescendant = (category: Category, targetId: number): boolean => {
+    if (category.id === targetId) {
+      return true;
+    }
+    return category.subcategories?.some(subcat => isDescendant(subcat, targetId)) || false;
+  };
+
+  const handleArtifactAdded = async () => {
+    await loadCategories();
+    setAddArtifactDialogOpen(false);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -116,52 +200,77 @@ const CategoryTreeDemo: React.FC = () => {
 
   return (
     <Paper elevation={2} sx={{ p: 2, m: 2 }}>
-      <Box sx={{ mb: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h5">
-            Category Manager
-          </Typography>
+      <DndProvider backend={HTML5Backend}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h5">Categories</Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleAddCategory()}
           >
-            Add Category
+            Add Root Category
           </Button>
-        </Stack>
-        <Typography variant="body2" color="text.secondary">
-          Drag and drop categories to reorganize. Click arrows to expand/collapse.
-        </Typography>
-      </Box>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      <CategoryTreeComponent
-        categories={categories}
-        onCategoryMove={handleCategoryMove}
-        onAddSubcategory={handleAddCategory}
-        onDeleteCategory={handleDeleteCategory}
-      />
-      <AddCategoryDialog
-        open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
-        parentCategoryId={selectedParentId}
-        onCategoryAdded={loadCategories}
-      />
-      <DeleteCategoryDialog
-        open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setCategoryToDelete(null);
-          setDeleteError(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        categoryName={categoryToDelete?.name || ''}
-        loading={deleteLoading}
-        error={deleteError}
-      />
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <CategoryTree
+          categories={categories}
+          onCategoryMove={handleCategoryMove}
+          onAddSubcategory={handleAddCategory}
+          onDeleteCategory={handleDeleteCategory}
+          onAddArtifact={handleAddArtifact}
+          onDeleteArtifact={handleDeleteArtifact}
+          onArtifactMove={handleArtifactMove}
+        />
+
+        <AddCategoryDialog
+          open={addDialogOpen}
+          onClose={() => {
+            setAddDialogOpen(false);
+            setSelectedParentId(undefined);
+          }}
+          onCategoryAdded={loadCategories}
+          parentId={selectedParentId}
+        />
+        <DeleteCategoryDialog
+          open={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false);
+            setCategoryToDelete(null);
+            setDeleteError(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          category={categoryToDelete}
+          loading={deleteLoading}
+          error={deleteError}
+        />
+        <AddArtifactDialog
+          open={addArtifactDialogOpen}
+          onClose={() => {
+            setAddArtifactDialogOpen(false);
+            setSelectedCategoryId(null);
+          }}
+          onArtifactAdded={handleArtifactAdded}
+          categoryId={selectedCategoryId || 0}
+        />
+        <DeleteArtifactDialog
+          open={deleteArtifactDialogOpen}
+          onClose={() => {
+            setDeleteArtifactDialogOpen(false);
+            setArtifactToDelete(null);
+            setDeleteArtifactError(null);
+          }}
+          onConfirm={handleConfirmDeleteArtifact}
+          artifactName={artifactToDelete?.name || ''}
+          loading={deleteArtifactLoading}
+          error={deleteArtifactError}
+        />
+      </DndProvider>
     </Paper>
   );
 };

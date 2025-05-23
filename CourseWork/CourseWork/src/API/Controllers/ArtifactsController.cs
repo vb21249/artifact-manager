@@ -25,31 +25,23 @@ namespace CourseWork.API.Controllers
         }
 
         /// <summary>
-        /// Gets all artifacts with optional filtering and sorting
+        /// Gets all artifacts
         /// </summary>
-        /// <param name="searchDto">Search and filter criteria</param>
-        /// <returns>List of artifacts matching the criteria</returns>
+        /// <returns>List of artifacts</returns>
         /// <response code="200">Returns the list of artifacts</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<ArtifactDto>), 200)]
-        public IActionResult GetArtifacts([FromQuery] ArtifactSearchDto searchDto)
+        public IActionResult GetArtifacts()
         {
-            var searchQuery = new ArtifactSearchQuery
+            try
             {
-                SearchTerm = searchDto.SearchTerm,
-                ProgrammingLanguage = searchDto.ProgrammingLanguage,
-                Framework = searchDto.Framework,
-                LicenseType = searchDto.LicenseType,
-                CategoryIds = searchDto.CategoryIds,
-                SortingField = searchDto.SortField,
-                SortDescending = searchDto.SortDescending
-            };
-
-            var artifacts = _unitOfWork.SoftwareDevArtifactRepository
-                .FilterByCombinedCriteria(searchQuery)
-                .Select(MapToArtifactDto);
-
-            return Ok(artifacts);
+                var artifacts = _unitOfWork.SoftwareDevArtifactRepository.GetAll();
+                return Ok(artifacts.Select(MapToArtifactDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving artifacts", error = ex.Message });
+            }
         }
 
         /// <summary>

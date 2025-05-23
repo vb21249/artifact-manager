@@ -8,19 +8,23 @@ import {
   styled,
   Badge,
   Box,
-  Tooltip
+  Tooltip,
+  Typography,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { 
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   DragIndicator as DragIcon,
   Add as AddIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Link as LinkIcon,
+  MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Category } from '../../services/categoryService';
-import DeleteCategoryDialog from './DeleteCategoryDialog';
+import { Category, Artifact } from '../../services/categoryService';
 
 const StyledListItem = styled(ListItem)(({ theme }) => ({
   cursor: 'pointer',
@@ -32,7 +36,70 @@ const StyledListItem = styled(ListItem)(({ theme }) => ({
   padding: theme.spacing(1),
 }));
 
-const DraggableTreeItem: React.FC<{
+const ArtifactItem = styled(ListItem)(({ theme }) => ({
+  padding: theme.spacing(1),
+}));
+
+const ArtifactContent = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1),
+}));
+
+const DraggableArtifact: React.FC<{
+  artifact: Artifact;
+  categoryId: number;
+  onArtifactMove: (artifactId: number, targetCategoryId: number) => void;
+  onDeleteArtifact: (artifactId: number, artifactName: string) => void;
+}> = ({ artifact, categoryId, onArtifactMove, onDeleteArtifact }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'ARTIFACT',
+    item: { id: artifact.id, sourceCategory: categoryId },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <ArtifactItem
+      ref={drag}
+      sx={{ opacity: isDragging ? 0.5 : 1 }}
+      key={artifact.id}
+    >
+      <ArtifactContent>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography variant="subtitle1" component="div" fontWeight="medium">
+            {artifact.title}
+          </Typography>
+          <Box>
+            <Tooltip title="Open URL">
+              <IconButton 
+                size="small" 
+                href={artifact.url} 
+                target="_blank"
+                sx={{ mr: 1 }}
+              >
+                <LinkIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Artifact">
+              <IconButton
+                size="small"
+                onClick={() => onDeleteArtifact(artifact.id, artifact.title)}
+                color="error"
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          {artifact.description}
+        </Typography>
+      </ArtifactContent>
+    </ArtifactItem>
+  );
+};
+
+interface DraggableTreeItemProps {
   category: Category;
   level: number;
   onDrop: (dragId: string, dropId: string) => void;
@@ -40,7 +107,25 @@ const DraggableTreeItem: React.FC<{
   isExpanded: boolean;
   onAddSubcategory: (parentId: number) => void;
   onDeleteCategory: (category: Category) => void;
-}> = ({ category, level, onDrop, onToggle, isExpanded, onAddSubcategory, onDeleteCategory }) => {
+  onAddArtifact: (categoryId: number) => void;
+  onDeleteArtifact: (artifactId: number, artifactName: string) => void;
+  onCategoryMove: (sourceId: string, targetId: string) => void;
+  onArtifactMove: (artifactId: number, targetCategoryId: number) => void;
+}
+
+const DraggableTreeItem: React.FC<DraggableTreeItemProps> = ({ 
+  category, 
+  level, 
+  onDrop, 
+  onToggle, 
+  isExpanded, 
+  onAddSubcategory, 
+  onDeleteCategory,
+  onAddArtifact,
+  onDeleteArtifact,
+  onCategoryMove,
+  onArtifactMove
+}) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'CATEGORY',
     item: { id: category.id.toString() },
@@ -49,29 +134,51 @@ const DraggableTreeItem: React.FC<{
     }),
   });
 
-  const [{ isOver }, drop] = useDrop({
-    accept: 'CATEGORY',
-    drop: (item: { id: string }) => {
-      onDrop(item.id, category.id.toString());
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: ['CATEGORY', 'ARTIFACT'],
+    drop: (item: { id: string | number, sourceCategory?: number }, monitor) => {
+      if (monitor.didDrop()) {
+        return;
+      }
+      if (monitor.getItemType() === 'CATEGORY') {
+        onCategoryMove(item.id.toString(), category.id.toString());
+      } else if (monitor.getItemType() === 'ARTIFACT' && typeof item.id === 'number') {
+        onArtifactMove(item.id, category.id);
+      }
     },
     collect: (monitor) => ({
-      isOver: monitor.isOver(),
+      isOver: monitor.isOver({ shallow: true }),
+      canDrop: monitor.canDrop(),
     }),
   });
 
-  const isDeleteDisabled = category.artifactsCount > 0 || (category.subcategories && category.subcategories.length > 0);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const isDeleteDisabled = (category.artifacts?.length ?? 0) > 0 || (category.subcategories?.length ?? 0) > 0;
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  const shouldShowExpandIcon = (category.subcategories?.length ?? 0) > 0 || (category.artifacts?.length ?? 0) > 0;
 
   return (
     <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
       <StyledListItem
         sx={{
           pl: level * 2,
-          backgroundColor: isOver ? 'action.hover' : 'transparent',
+          backgroundColor: isOver && canDrop ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+          borderLeft: isOver && canDrop ? '2px solid #1976d2' : 'none',
         }}
+        onClick={shouldShowExpandIcon ? onToggle : undefined}
       >
         <DragIcon sx={{ mr: 1, cursor: 'move' }} />
-        {category.subcategories && category.subcategories.length > 0 && (
-          <IconButton size="small" onClick={onToggle}>
+        {shouldShowExpandIcon && (
+          <IconButton size="small" onClick={(e) => { e.stopPropagation(); onToggle(); }}>
             {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
         )}
@@ -83,44 +190,94 @@ const DraggableTreeItem: React.FC<{
           <ListItemText primary={category.name} />
         </Badge>
         <Box ml="auto" display="flex" alignItems="center">
-          <Tooltip title="Add Subcategory">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddSubcategory(category.id);
+          <IconButton
+            size="small"
+            onClick={handleMenuClick}
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={() => {
+              handleMenuClose();
+              onAddSubcategory(category.id);
+            }}>
+              Add Subcategory
+            </MenuItem>
+            <MenuItem onClick={() => {
+              handleMenuClose();
+              onAddArtifact(category.id);
+            }}>
+              Add Artifact
+            </MenuItem>
+            <MenuItem 
+              onClick={() => {
+                handleMenuClose();
+                onDeleteCategory(category);
               }}
+              disabled={isDeleteDisabled}
+              sx={{ color: 'error.main' }}
             >
-              <AddIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={isDeleteDisabled ? "Cannot delete non-empty category" : "Delete Category"}>
-            <span>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteCategory(category);
-                }}
-                disabled={isDeleteDisabled}
-                color="error"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </span>
-          </Tooltip>
+              Delete Category
+            </MenuItem>
+          </Menu>
         </Box>
       </StyledListItem>
+
+      <Collapse in={isExpanded}>
+        <List disablePadding>
+          {category.artifacts && category.artifacts.map((artifact) => (
+            <DraggableArtifact
+              key={artifact.id}
+              artifact={artifact}
+              categoryId={category.id}
+              onArtifactMove={onArtifactMove}
+              onDeleteArtifact={onDeleteArtifact}
+            />
+          ))}
+          {category.subcategories && category.subcategories.map((subcategory) => (
+            <CategoryTree
+              key={subcategory.id}
+              categories={[subcategory]}
+              onCategoryMove={onCategoryMove}
+              onAddSubcategory={onAddSubcategory}
+              onDeleteCategory={onDeleteCategory}
+              onAddArtifact={onAddArtifact}
+              onDeleteArtifact={onDeleteArtifact}
+              onArtifactMove={onArtifactMove}
+              level={level + 1}
+            />
+          ))}
+        </List>
+      </Collapse>
     </div>
   );
 };
 
-const CategoryTreeComponent: React.FC<{
+interface CategoryTreeProps {
   categories: Category[];
+  level?: number;
   onCategoryMove: (sourceId: string, targetId: string) => void;
   onAddSubcategory: (parentId: number) => void;
   onDeleteCategory: (category: Category) => void;
-}> = ({ categories, onCategoryMove, onAddSubcategory, onDeleteCategory }) => {
+  onAddArtifact: (categoryId: number) => void;
+  onDeleteArtifact: (artifactId: number, artifactName: string) => void;
+  onArtifactMove: (artifactId: number, targetCategoryId: number) => void;
+}
+
+const CategoryTree: React.FC<CategoryTreeProps> = ({ 
+  categories, 
+  level = 0,
+  onCategoryMove, 
+  onAddSubcategory, 
+  onDeleteCategory,
+  onAddArtifact,
+  onDeleteArtifact,
+  onArtifactMove
+}) => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const toggleExpand = (categoryId: string) => {
@@ -148,25 +305,20 @@ const CategoryTreeComponent: React.FC<{
           isExpanded={isExpanded}
           onAddSubcategory={onAddSubcategory}
           onDeleteCategory={onDeleteCategory}
+          onAddArtifact={onAddArtifact}
+          onDeleteArtifact={onDeleteArtifact}
+          onCategoryMove={onCategoryMove}
+          onArtifactMove={onArtifactMove}
         />
-        {category.subcategories && category.subcategories.length > 0 && (
-          <Collapse in={isExpanded}>
-            <List disablePadding>
-              {category.subcategories.map((child) => renderCategory(child, level + 1))}
-            </List>
-          </Collapse>
-        )}
       </React.Fragment>
     );
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <List>
-        {categories.map((category) => renderCategory(category))}
-      </List>
-    </DndProvider>
+    <List>
+      {categories.map((category) => renderCategory(category, level))}
+    </List>
   );
 };
 
-export default CategoryTreeComponent;
+export default CategoryTree;
