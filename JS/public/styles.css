@@ -873,3 +873,37 @@ body {
         opacity: 1;
     }
 }
+
+.dialog-buttons button:hover {
+    background-color: #0056b3;
+}
+
+/* Drag and drop styling */
+.dragging {
+    opacity: 0.5;
+    cursor: move;
+}
+
+.drag-over {
+    border: 2px dashed #007bff;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.position-indicator {
+    position: absolute;
+    height: 3px;
+    background-color: #007bff;
+    left: 0;
+    z-index: 100;
+    pointer-events: none;
+}
+
+/* Make sure items are positioned relatively for indicators */
+.category-item {
+    position: relative;
+}
+
+.artifact-item {
+    position: relative;
+    cursor: move; /* Show move cursor on artifacts */
+}

@@ -46,6 +46,9 @@ namespace CourseWork.Domain.Entities
         [StringLength(50)]
         public string LicenseType { get; set; }
 
+        // Position within the category (for ordering)
+        public int Position { get; set; }
+
         // Navigation properties
         public int CategoryId { get; set; }
         public virtual Category Category { get; set; }

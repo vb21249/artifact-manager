@@ -16,6 +16,21 @@ services:
     networks:
       - artifacts_network
 
+  api-3-iteration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:80"
+      - "8083:443"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SoftwareArtifactsDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+    networks:
+      - artifacts_network
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:

@@ -1,7 +1,7 @@
 # This is a generated file. Not intended for manual editing.
 version: "3.8"
 services:
-  api:
+  api-3-iteration:
     build:
       context: "D:\\Programming\\C#\\CourseWork\\CourseWork"
       dockerfile: "Dockerfile"
