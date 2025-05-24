@@ -9,6 +9,16 @@
 <body>
     <div class="container">
         <h1>Category and Artifact Manager</h1>
+        <div class="search-container">
+            <select id="search-criteria">
+                <option value="language">Language</option>
+                <option value="framework">Framework</option>
+                <option value="license">License</option>
+            </select>
+            <input type="text" id="search-input" placeholder="Enter search term...">
+            <button id="apply-filter">Apply Filter</button>
+            <button id="show-all">Show All</button>
+        </div>
         <div id="category-tree"></div>
     </div>
     <script src="tree.js"></script>

@@ -219,6 +219,9 @@ body {
     align-items: center;
     padding: 8px;
     gap: 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    margin-bottom: 8px;
 }
 
 .toggle-btn {
@@ -237,32 +240,26 @@ body {
     font-weight: 500;
 }
 
-.category-actions {
+.category-actions, .artifact-actions {
     display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.category:hover .category-actions {
-    opacity: 1;
+    gap: 8px;
+    margin-left: 16px;
 }
 
 .category-actions button {
-    padding: 4px 8px;
-    border: none;
-    border-radius: 3px;
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
     cursor: pointer;
-    font-size: 12px;
-    color: white;
-    transition: filter 0.2s;
+    font-size: 14px;
+    transition: all 0.2s;
 }
 
 .category-actions button:hover {
-    filter: brightness(90%);
+    background-color: #f0f0f0;
 }
 
-/* Button colors */
 .category-actions button:nth-child(1) { /* Add Subcategory */
     background-color: #4CAF50;
 }
@@ -317,30 +314,24 @@ body {
 
 .artifact-actions {
     display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.artifact:hover .artifact-actions {
-    opacity: 1;
+    gap: 8px;
+    margin-left: 16px;
 }
 
 .artifact-actions button {
-    padding: 4px 8px;
-    border: none;
-    border-radius: 3px;
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
     cursor: pointer;
-    font-size: 12px;
-    color: white;
-    transition: filter 0.2s;
+    font-size: 14px;
+    transition: all 0.2s;
 }
 
 .artifact-actions button:hover {
-    filter: brightness(90%);
+    background-color: #f0f0f0;
 }
 
-/* Artifact button colors */
 .artifact-actions button:nth-child(1) { /* View */
     background-color: #2196F3;
 }
@@ -355,30 +346,17 @@ body {
 
 .artifact-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    padding: 8px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
 }
 
-.artifact-actions {
-    display: flex;
-    gap: 5px;
+.artifact-header h4 {
+    margin: 0;
+    flex-grow: 1;
 }
 
-.delete-artifact {
-    padding: 4px 8px;
-    background-color: #f44336;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.delete-artifact:hover {
-    background-color: #d32f2f;
-}
-
-/* Artifact Node Styles */
 .artifact-node {
     background-color: #f8f9fa;
     border-left: 3px solid #9c27b0;
@@ -473,7 +451,7 @@ body {
 
 .dialog {
     background-color: white;
-    padding: 20px;
+    padding: 24px;
     border-radius: 8px;
     width: 500px;
     max-width: 90%;
@@ -482,17 +460,17 @@ body {
 }
 
 .dialog h2 {
-    margin-bottom: 20px;
-    color: #333;
+    margin-top: 0;
+    margin-bottom: 16px;
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: bold;
 }
 
@@ -503,77 +481,135 @@ body {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group textarea {
+    height: 100px;
+    resize: vertical;
 }
 
 .dialog-buttons {
     display: flex;
+    gap: 8px;
     justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.dialog-buttons button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    margin-top: 24px;
 }
 
 .dialog-buttons button[type="submit"] {
     background-color: #4CAF50;
     color: white;
+    border: none;
 }
 
-.dialog-buttons button.cancel {
+.dialog-buttons button[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+.dialog-buttons .cancel {
     background-color: #f44336;
     color: white;
+    border: none;
 }
 
-.dialog-buttons button:hover {
-    filter: brightness(90%);
+.dialog-buttons .cancel:hover {
+    background-color: #d32f2f;
 }
 
-.dialog-content {
-    background-color: white;
-    padding: 24px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.category-artifacts {
+    margin-left: 24px;
+    border-left: 2px solid #eee;
+    padding-left: 16px;
 }
 
-.dialog-content h2 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
-/* Error Message Styles */
-.error-message {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 12px 20px;
+.artifact-item {
+    margin-bottom: 16px;
+    border: 1px solid #eee;
     border-radius: 4px;
-    border-left: 4px solid #c62828;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    animation: slideIn 0.3s ease-out;
-    max-width: 400px;
+    overflow: hidden;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.artifact-details {
+    padding: 16px;
+}
+
+.artifact-info, .artifact-tech {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.artifact-info a {
+    color: #2196F3;
+    text-decoration: none;
+}
+
+.artifact-info a:hover {
+    text-decoration: underline;
+}
+
+.categories-list {
+    padding: 16px;
+}
+
+.category-item {
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.category-item.dragging {
+    opacity: 0.5;
+    border: 2px dashed #666;
+}
+
+.category-item.drag-over {
+    border: 2px dashed #4CAF50;
+}
+
+.add-root-category {
+    margin: 16px 0;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+}
+
+.add-root-category:hover {
+    background-color: #45a049;
+}
+
+.edit-category {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+}
+
+.edit-category:hover {
+    background-color: #1976D2;
+}
+
+.delete-category, .delete-artifact {
+    background-color: #f44336;
+    color: white;
+    border: none;
+}
+
+.delete-category:hover, .delete-artifact:hover {
+    background-color: #d32f2f;
+}
+
+.add-subcategory, .add-artifact {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+}
+
+.add-subcategory:hover, .add-artifact:hover {
+    background-color: #45a049;
 }
 
 .artifacts-list {
@@ -683,4 +719,87 @@ body {
     text-align: center;
     color: #6c757d;
     user-select: none;
+}
+
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    align-items: center;
+}
+
+#search-criteria {
+    min-width: 120px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+}
+
+#search-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#search-criteria:hover,
+#search-input:hover {
+    border-color: #999;
+}
+
+#search-criteria:focus,
+#search-input:focus {
+    outline: none;
+    border-color: #666;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-buttons select {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+}
+
+.filter-buttons select:hover {
+    border-color: #999;
+}
+
+/* Error Message Styles */
+.error-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px 20px;
+    border-radius: 4px;
+    border-left: 4px solid #c62828;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    max-width: 400px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
