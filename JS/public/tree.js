@@ -80,7 +80,7 @@ class CategoryTree {
             const response = await fetch(`${this.apiBaseUrl}/Artifacts/filter/language?language=${encodeURIComponent(language)}`);
             if (!response.ok) throw new Error('Filter failed');
             const results = await response.json();
-            this.updateTreeWithResults(results);
+            await this.loadCategoryTreeWithArtifacts(results);
         } catch (error) {
             this.handleError(error);
         }
@@ -91,7 +91,7 @@ class CategoryTree {
             const response = await fetch(`${this.apiBaseUrl}/Artifacts/filter/framework?framework=${encodeURIComponent(framework)}`);
             if (!response.ok) throw new Error('Filter failed');
             const results = await response.json();
-            this.updateTreeWithResults(results);
+            await this.loadCategoryTreeWithArtifacts(results);
         } catch (error) {
             this.handleError(error);
         }
@@ -102,49 +102,10 @@ class CategoryTree {
             const response = await fetch(`${this.apiBaseUrl}/Artifacts/filter/license?licenseType=${encodeURIComponent(license)}`);
             if (!response.ok) throw new Error('Filter failed');
             const results = await response.json();
-            this.updateTreeWithResults(results);
+            await this.loadCategoryTreeWithArtifacts(results);
         } catch (error) {
             this.handleError(error);
         }
-    }
-
-    updateTreeWithResults(results) {
-        this.container.innerHTML = '';
-        
-        if (!results || results.length === 0) {
-            this.container.innerHTML = '<div class="no-results">No artifacts found</div>';
-            return;
-        }
-
-        const resultsList = document.createElement('div');
-        resultsList.className = 'results-list';
-        
-        results.forEach(artifact => {
-            const artifactDiv = document.createElement('div');
-            artifactDiv.className = 'artifact-item';
-            artifactDiv.innerHTML = `
-                <div class="artifact-header">
-                    <h3>${this.escapeHtml(artifact.title)}</h3>
-                </div>
-                <div class="artifact-details">
-                    <p>${this.escapeHtml(artifact.description)}</p>
-                    <div class="artifact-info">
-                        <span>Author: ${this.escapeHtml(artifact.author)}</span>
-                        <span>Version: ${this.escapeHtml(artifact.currentVersion)}</span>
-                        <span>Type: ${this.escapeHtml(artifact.documentationType)}</span>
-                        <a href="${artifact.url}" target="_blank">View Resource</a>
-                    </div>
-                    <div class="artifact-tech">
-                        <span>Language: ${this.escapeHtml(artifact.programmingLanguage)}</span>
-                        <span>Framework: ${this.escapeHtml(artifact.framework)}</span>
-                        <span>License: ${this.escapeHtml(artifact.licenseType)}</span>
-                    </div>
-                </div>
-            `;
-            resultsList.appendChild(artifactDiv);
-        });
-
-        this.container.appendChild(resultsList);
     }
 
     render() {
@@ -168,90 +129,158 @@ class CategoryTree {
         categoriesList.appendChild(addRootButton);
         
         this.data.forEach(category => {
-            const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'category-item';
-            categoryDiv.draggable = true;
-            categoryDiv.dataset.id = category.id;
-            
-            categoryDiv.innerHTML = `
-                <div class="category-header">
-                    <h3>${this.escapeHtml(category.name)}</h3>
-                    <div class="category-actions">
-                        <button class="edit-category">Edit</button>
-                        <button class="delete-category">Delete</button>
-                        <button class="add-subcategory">Add Subcategory</button>
-                        <button class="add-artifact">Add Artifact</button>
-                    </div>
-                </div>
-            `;
-
-            // Setup category action buttons
-            const actions = categoryDiv.querySelector('.category-actions');
-            actions.querySelector('.edit-category').onclick = (e) => {
-                e.stopPropagation();
-                this.editCategory(category.id, category.name);
-            };
-            actions.querySelector('.delete-category').onclick = (e) => {
-                e.stopPropagation();
-                this.deleteCategory(category.id);
-            };
-            actions.querySelector('.add-subcategory').onclick = (e) => {
-                e.stopPropagation();
-                this.addSubcategory(category.id);
-            };
-            actions.querySelector('.add-artifact').onclick = (e) => {
-                e.stopPropagation();
-                this.addArtifact(category.id);
-            };
-
-            if (category.artifacts && category.artifacts.length > 0) {
-                const artifactsList = document.createElement('div');
-                artifactsList.className = 'category-artifacts';
-                
-                category.artifacts.forEach(artifact => {
-                    const artifactDiv = document.createElement('div');
-                    artifactDiv.className = 'artifact-item';
-                    artifactDiv.innerHTML = `
-                        <div class="artifact-header">
-                            <h4>${this.escapeHtml(artifact.title)}</h4>
-                            <div class="artifact-actions">
-                                <button class="delete-artifact">Delete</button>
-                            </div>
-                        </div>
-                        <div class="artifact-details">
-                            <p>${this.escapeHtml(artifact.description)}</p>
-                            <div class="artifact-info">
-                                <span>Author: ${this.escapeHtml(artifact.author)}</span>
-                                <span>Version: ${this.escapeHtml(artifact.currentVersion)}</span>
-                                <span>Type: ${this.escapeHtml(artifact.documentationType)}</span>
-                                <a href="${artifact.url}" target="_blank">View Resource</a>
-                            </div>
-                            <div class="artifact-tech">
-                                <span>Language: ${this.escapeHtml(artifact.programmingLanguage)}</span>
-                                <span>Framework: ${this.escapeHtml(artifact.framework)}</span>
-                                <span>License: ${this.escapeHtml(artifact.licenseType)}</span>
-                            </div>
-                        </div>
-                    `;
-
-                    // Setup delete artifact button
-                    const deleteBtn = artifactDiv.querySelector('.delete-artifact');
-                    deleteBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        this.deleteArtifact(artifact.id);
-                    };
-
-                    artifactsList.appendChild(artifactDiv);
-                });
-                
-                categoryDiv.appendChild(artifactsList);
-            }
-
-            categoriesList.appendChild(categoryDiv);
+            categoriesList.appendChild(this.renderCategory(category));
         });
 
         this.container.appendChild(categoriesList);
         this.setupAddRootCategoryButton();
+    }
+
+    renderCategory(category, level = 0) {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'category-item';
+        categoryDiv.draggable = true;
+        categoryDiv.dataset.id = category.id;
+        categoryDiv.style.marginLeft = level > 0 ? `${level * 20}px` : '0';
+        
+        categoryDiv.innerHTML = `
+            <div class="category-header">
+                <h3>${this.escapeHtml(category.name)}</h3>
+                <div class="category-actions">
+                    <button class="edit-category">Edit</button>
+                    <button class="delete-category">Delete</button>
+                    <button class="add-subcategory">Add Subcategory</button>
+                    <button class="add-artifact">Add Artifact</button>
+                </div>
+            </div>
+        `;
+
+        // Setup category action buttons
+        const actions = categoryDiv.querySelector('.category-actions');
+        actions.querySelector('.edit-category').onclick = (e) => {
+            e.stopPropagation();
+            this.editCategory(category.id, category.name);
+        };
+        actions.querySelector('.delete-category').onclick = (e) => {
+            e.stopPropagation();
+            this.deleteCategory(category.id);
+        };
+        actions.querySelector('.add-subcategory').onclick = (e) => {
+            e.stopPropagation();
+            this.addSubcategory(category.id);
+        };
+        actions.querySelector('.add-artifact').onclick = (e) => {
+            e.stopPropagation();
+            this.addArtifact(category.id);
+        };
+
+        // Render artifacts if any
+        if (category.artifacts && category.artifacts.length > 0) {
+            const artifactsList = document.createElement('div');
+            artifactsList.className = 'category-artifacts';
+            
+            category.artifacts.forEach(artifact => {
+                artifactsList.appendChild(this.renderArtifact(artifact));
+            });
+            
+            categoryDiv.appendChild(artifactsList);
+        }
+
+        // Render subcategories recursively
+        if (category.subcategories && category.subcategories.length > 0) {
+            const subcategoriesDiv = document.createElement('div');
+            subcategoriesDiv.className = 'subcategories';
+            
+            category.subcategories.forEach(subcategory => {
+                subcategoriesDiv.appendChild(this.renderCategory(subcategory, level + 1));
+            });
+            
+            categoryDiv.appendChild(subcategoriesDiv);
+        }
+
+        return categoryDiv;
+    }
+
+    renderArtifact(artifact) {
+        const artifactDiv = document.createElement('div');
+        artifactDiv.className = 'artifact-item';
+        artifactDiv.innerHTML = `
+            <div class="artifact-header">
+                <h4>${this.escapeHtml(artifact.title)}</h4>
+                <div class="artifact-actions">
+                    <button class="delete-artifact">Delete</button>
+                </div>
+            </div>
+            <div class="artifact-details">
+                <p>${this.escapeHtml(artifact.description)}</p>
+                <div class="artifact-info">
+                    <span>Author: ${this.escapeHtml(artifact.author)}</span>
+                    <span>Version: ${this.escapeHtml(artifact.currentVersion)}</span>
+                    <span>Type: ${this.escapeHtml(artifact.documentationType)}</span>
+                    <a href="${artifact.url}" target="_blank">View Resource</a>
+                </div>
+                <div class="artifact-tech">
+                    <span>Language: ${this.escapeHtml(artifact.programmingLanguage)}</span>
+                    <span>Framework: ${this.escapeHtml(artifact.framework)}</span>
+                    <span>License: ${this.escapeHtml(artifact.licenseType)}</span>
+                </div>
+            </div>
+        `;
+
+        // Setup delete artifact button
+        const deleteBtn = artifactDiv.querySelector('.delete-artifact');
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.deleteArtifact(artifact.id);
+        };
+
+        return artifactDiv;
+    }
+
+    async loadCategoryTreeWithArtifacts(filteredArtifacts) {
+        try {
+            // Get the full category tree
+            const response = await fetch(`${this.apiBaseUrl}/Categories`);
+            if (!response.ok) throw new Error('Failed to load categories');
+            const categories = await response.json();
+
+            // Create a set of artifact IDs for quick lookup
+            const filteredArtifactIds = new Set(filteredArtifacts.map(a => a.id));
+
+            // Filter the category tree to only include categories that contain filtered artifacts
+            const filterCategory = (category) => {
+                // Keep track of whether this category or its subcategories contain matching artifacts
+                let hasMatchingArtifacts = false;
+
+                // Filter artifacts in this category
+                if (category.artifacts) {
+                    category.artifacts = category.artifacts.filter(artifact => 
+                        filteredArtifactIds.has(artifact.id)
+                    );
+                    hasMatchingArtifacts = category.artifacts.length > 0;
+                }
+
+                // Recursively filter subcategories
+                if (category.subcategories) {
+                    category.subcategories = category.subcategories
+                        .map(filterCategory)
+                        .filter(sub => sub !== null);
+                    hasMatchingArtifacts = hasMatchingArtifacts || category.subcategories.length > 0;
+                }
+
+                // Return the category if it has matching artifacts, null otherwise
+                return hasMatchingArtifacts ? category : null;
+            };
+
+            // Filter the entire tree
+            this.data = categories
+                .map(filterCategory)
+                .filter(category => category !== null);
+
+            this.render();
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 
     setupAddRootCategoryButton() {
