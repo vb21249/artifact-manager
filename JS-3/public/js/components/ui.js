@@ -22,6 +22,7 @@ const UI = (() => {
                 
                 // Build a hierarchical structure
                 const rootCategories = App.models.category.getRootCategories();
+                console.log('Root categories:', rootCategories);
                 rootCategories.forEach(category => {
                     const categoryElement = UI.categories.createCategoryElement(category);
                     categoriesTree.appendChild(categoryElement);
@@ -31,6 +32,11 @@ const UI = (() => {
 
             // TODO: has children gives always false
             createCategoryElement: (category) => {
+                // Create a wrapper div that will contain both the category item and its children
+                const categoryWrapper = document.createElement('div');
+                categoryWrapper.className = 'category-wrapper';
+                
+                // Create the actual category item for the current category
                 const categoryItem = document.createElement('div');
                 categoryItem.className = 'category-item draggable';
                 categoryItem.dataset.id = category.id;
@@ -40,10 +46,11 @@ const UI = (() => {
                     categoryItem.classList.add('selected');
                 }
                 
-                // Check if this category has children
-                const hasChildren = App.models.category.hasChildren(category.id);
-
-                console.log(category.id + ' has ' + (hasChildren ? 'children' : 'no children'));
+                // Check if this category has children (either via subcategories array or parent-child relationship)
+                const hasChildren = (category.subcategories && category.subcategories.length > 0) || 
+                                   App.models.category.hasChildren(category.id);
+                
+                console.log(`Category ${category.name} (${category.id}) has children: ${hasChildren}`);
                 
                 const expander = document.createElement('span');
                 expander.className = 'expander';
@@ -51,83 +58,98 @@ const UI = (() => {
                 categoryItem.appendChild(expander);
                 
                 const nameSpan = document.createElement('span');
+                nameSpan.className = 'category-name';
                 nameSpan.textContent = category.name;
                 categoryItem.appendChild(nameSpan);
                 
-                // Set up drag and drop
+                // Add event listeners
+                categoryItem.addEventListener('click', (e) => {
+                    if (e.target === expander && hasChildren) {
+                        UI.categories.toggleExpansion(categoryWrapper);
+                    } else if (e.target !== expander) {
+                        App.selectCategory(category.id);
+                    }
+                    e.stopPropagation();
+                });
+                
+                categoryItem.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    UI.categories.showContextMenu(e, category.id);
+                });
+                
+                // Drag and drop event listeners
                 categoryItem.addEventListener('dragstart', (e) => {
-                    App.draggedItem = category;
+                    App.draggedItem = category.id;
                     App.draggedItemType = 'category';
-                    categoryItem.classList.add('dragging');
                     e.dataTransfer.setData('text/plain', category.id);
-                    e.dataTransfer.effectAllowed = 'move';
+                    setTimeout(() => categoryItem.classList.add('dragging'), 0);
                 });
                 
                 categoryItem.addEventListener('dragend', () => {
                     categoryItem.classList.remove('dragging');
-                    App.utils.clearDropTargets();
                 });
                 
                 categoryItem.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    if (App.draggedItemType === 'category' && App.draggedItem.id !== category.id) {
-                        categoryItem.classList.add('drop-target');
+                    if (App.draggedItemType === 'category' && App.draggedItem !== category.id) {
+                        // Don't allow dropping a category into its own descendant
+                        if (!App.models.category.isDescendant(category.id, App.draggedItem)) {
+                            categoryItem.classList.add('drag-over');
+                        }
+                    } else if (App.draggedItemType === 'artifact') {
+                        categoryItem.classList.add('drag-over');
                     }
                 });
                 
                 categoryItem.addEventListener('dragleave', () => {
-                    categoryItem.classList.remove('drop-target');
+                    categoryItem.classList.remove('drag-over');
                 });
                 
-                categoryItem.addEventListener('drop', async (e) => {
+                categoryItem.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    categoryItem.classList.remove('drop-target');
+                    categoryItem.classList.remove('drag-over');
                     
-                    if (App.draggedItemType === 'category' && App.draggedItem.id !== category.id) {
-                        // Prevent moving a category into its own descendant
-                        if (!App.models.category.isDescendant(category.id, App.draggedItem.id)) {
-                            await App.moveCategory(App.draggedItem.id, category.id, 0);
+                    if (App.draggedItemType === 'category' && App.draggedItem !== category.id) {
+                        // Don't allow dropping a category into its own descendant
+                        if (!App.models.category.isDescendant(category.id, App.draggedItem)) {
+                            App.moveCategory(App.draggedItem, category.id, 0);
                         }
                     } else if (App.draggedItemType === 'artifact') {
-                        await App.moveArtifact(App.draggedItem.id, category.id, 0);
+                        App.moveArtifact(App.draggedItem, category.id, 0);
                     }
                 });
                 
-                // Click to select
-                categoryItem.addEventListener('click', (e) => {
-                    if (e.target === expander) {
-                        UI.categories.toggleExpansion(categoryItem);
-                    } else {
-                        App.selectCategory(category.id);
-                    }
-                });
-                
-                // If this category has children, create a container for them
+                // Create container for child categories
                 if (hasChildren) {
                     const childrenContainer = document.createElement('div');
                     childrenContainer.className = 'category-children';
                     childrenContainer.style.display = 'none'; // Initially collapsed
                     
-                    const childCategories = App.models.category.getChildCategories(category.id);
-                    childCategories.forEach(childCategory => {
-                        const childElement = UI.categories.createCategoryElement(childCategory);
-                        childrenContainer.appendChild(childElement);
-                    });
+                    // Get child categories - first check subcategories array, then fall back to parent-child relationship
+                    const childCategories = category.subcategories || App.models.category.getChildCategories(category.id);
                     
-                    // Create a wrapper to hold both the category item and its children
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'category-wrapper';
-                    wrapper.appendChild(categoryItem);
-                    wrapper.appendChild(childrenContainer);
-                    return wrapper;
+                    if (childCategories && childCategories.length > 0) {
+                        childCategories.forEach(childCategory => {
+                            const childElement = UI.categories.createCategoryElement(childCategory);
+                            childrenContainer.appendChild(childElement);
+                        });
+                        
+                        categoryWrapper.appendChild(categoryItem);
+                        categoryWrapper.appendChild(childrenContainer);
+                    } else {
+                        categoryWrapper.appendChild(categoryItem);
+                    }
+                } else {
+                    categoryWrapper.appendChild(categoryItem);
                 }
                 
-                return categoryItem;
+                return categoryWrapper;
             },
             
-            toggleExpansion: (categoryItem) => {
+            toggleExpansion: (categoryWrapper) => {
+                const categoryItem = categoryWrapper.querySelector('.category-item');
                 const expander = categoryItem.querySelector('.expander');
-                const childrenContainer = categoryItem.parentElement.querySelector('.category-children');
+                const childrenContainer = categoryWrapper.querySelector('.category-children');
                 
                 if (childrenContainer) {
                     if (childrenContainer.style.display === 'none') {

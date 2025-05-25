@@ -2,39 +2,84 @@
 const CategoryModel = (() => {
     // Private variables
     let categories = [];
+    let flattenedCategories = []; // Flattened version for easier querying
     let selectedCategoryId = null;
+    
+    // Helper to flatten the hierarchical structure
+    const flattenCategories = (cats, result = []) => {
+        cats.forEach(category => {
+            result.push({
+                id: category.id,
+                name: category.name,
+                parentCategoryId: category.parentCategoryId,
+                position: category.position,
+                path: category.path
+            });
+            
+            if (category.subcategories && category.subcategories.length > 0) {
+                flattenCategories(category.subcategories, result);
+            }
+        });
+        return result;
+    };
     
     // Public methods
     return {
-        getAll: () => categories,
+        getAll: () => flattenedCategories,
+        
         getSelected: () => selectedCategoryId,
+        
         setSelected: (id) => {
             selectedCategoryId = id;
             return selectedCategoryId;
         },
+        
         setCategories: (data) => {
             categories = data;
+            flattenedCategories = flattenCategories(data);
+            console.log('Flattened categories:', flattenedCategories);
             return categories;
         },
-        getById: (id) => categories.find(c => c.id === id),
-        getRootCategories: () => categories.filter(c => !c.parentCategoryId),
-        getChildCategories: (parentId) => categories.filter(c => c.parentCategoryId === parentId),
-        hasChildren: (categoryId) => categories.some(c => c.parentCategoryId === categoryId),
+        
+        getById: (id) => flattenedCategories.find(c => c.id === id),
+        
+        getRootCategories: () => categories,
+        
+        getChildCategories: (parentId) => {
+            const parent = categories.find(c => c.id === parentId);
+            return parent && parent.subcategories ? parent.subcategories : 
+                   flattenedCategories.filter(c => c.parentCategoryId === parentId);
+        },
+        
+        hasChildren: (categoryId) => {
+            // First check in the original hierarchical structure
+            const category = categories.find(c => c.id === categoryId);
+            if (category && category.subcategories && category.subcategories.length > 0) {
+                return true;
+            }
+            
+            // Then check in the flattened structure
+            return flattenedCategories.some(c => c.parentCategoryId === categoryId);
+        },
+        
         add: (category) => {
-            categories.push(category);
+            flattenedCategories.push(category);
             return category;
         },
+        
         update: (id, updatedCategory) => {
-            const index = categories.findIndex(c => c.id === id);
+            const index = flattenedCategories.findIndex(c => c.id === id);
             if (index !== -1) {
-                categories[index] = updatedCategory;
+                flattenedCategories[index] = updatedCategory;
             }
             return updatedCategory;
         },
+        
         remove: (id) => {
-            categories = categories.filter(c => c.id !== id);
+            flattenedCategories = flattenedCategories.filter(c => c.id !== id);
             return true;
         },
+        
         isDescendant: (potentialParentId, categoryId) => {
             // Check if potentialParentId is a descendant of categoryId
             let current = potentialParentId;
@@ -45,7 +90,7 @@ const CategoryModel = (() => {
                 if (visited.has(current)) return false; // Prevent infinite loops
                 
                 visited.add(current);
-                const category = categories.find(c => c.id === current);
+                const category = flattenedCategories.find(c => c.id === current);
                 current = category ? category.parentCategoryId : null;
             }
             
