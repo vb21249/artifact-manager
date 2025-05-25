@@ -101,7 +101,6 @@ const ApiService = (() => {
             getById: async (id) => {
                 try {
                     const response = await fetch(`${API_BASE}/artifacts/${id}`);
-                    console.log(response);
                     if (!response.ok) throw new Error('Failed to fetch artifact details');
                     return await response.json();
                 } catch (error) {
@@ -112,9 +111,8 @@ const ApiService = (() => {
             
             getVersions: async (id) => {
                 try {
-                    const response = await fetch(`${API_BASE}/artifacts/${id}/versions`);
-                    if (!response.ok) throw new Error('Failed to fetch artifact versions');
-                    return await response.json();
+                    console.log('Versions endpoint not implemented in API, returning empty array');
+                    return [];
                 } catch (error) {
                     handleError(error, `Error fetching versions for artifact ${id}`);
                     return [];

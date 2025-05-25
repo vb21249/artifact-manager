@@ -355,11 +355,13 @@ const UI = (() => {
                         <h2>${artifact.title}</h2>
                         <div class="artifact-detail-description">${artifact.description || 'No description provided.'}</div>
                         <div class="artifact-detail-meta">
-                            <div><strong>Version:</strong> ${artifact.currentVersion}</div>
+                            <div><strong>Version:</strong> ${artifact.currentVersion || 'Not specified'}</div>
                             <div><strong>Language:</strong> ${artifact.programmingLanguage || 'Not specified'}</div>
                             <div><strong>Framework:</strong> ${artifact.framework || 'Not specified'}</div>
                             <div><strong>License:</strong> ${artifact.licenseType || 'Not specified'}</div>
-                            <div><strong>Created:</strong> ${App.utils.formatDate(artifact.created)}</div>
+                            <div><strong>Documentation Type:</strong> ${artifact.documentationType || 'Not specified'}</div>
+                            <div><strong>Author:</strong> ${artifact.author || 'Not specified'}</div>
+                            <div><strong>URL:</strong> ${artifact.url ? `<a href="${artifact.url}" target="_blank">${artifact.url}</a>` : 'Not specified'}</div>
                         </div>
                     `;
                     
@@ -374,7 +376,7 @@ const UI = (() => {
                             versionItem.innerHTML = `
                                 <div class="version-number">v${version.versionNumber}</div>
                                 <div class="version-notes">${version.notes || 'No release notes'}</div>
-                                <div class="version-date">${App.utils.formatDate(version.created)}</div>
+                                <div class="version-date">${version.created ? App.utils.formatDate(version.created) : 'Unknown date'}</div>
                                 ${version.downloadUrl ? `<a href="${version.downloadUrl}" class="download-link" target="_blank">Download</a>` : ''}
                             `;
                             versionsContainer.appendChild(versionItem);
@@ -391,7 +393,7 @@ const UI = (() => {
                     document.getElementById('deleteArtifactBtn').onclick = () => {
                         if (confirm(`Are you sure you want to delete "${artifact.title}"?`)) {
                             App.deleteArtifact(artifact.id).then(() => {
-                                UI.modals.hide(artifactDetailsModal);
+                                UI.modals.hide(document.getElementById('artifactDetailsModal'));
                             });
                         }
                     };
@@ -401,10 +403,10 @@ const UI = (() => {
                     };
                     
                     // Show the modal
-                    UI.modals.show(artifactDetailsModal);
+                    UI.modals.show(document.getElementById('artifactDetailsModal'));
                 } catch (error) {
                     console.error('Error showing artifact details:', error);
-                    App.utils.showError('Failed to load artifact details.');
+                    alert('Failed to load artifact details: ' + error.message);
                 }
             }
         },
