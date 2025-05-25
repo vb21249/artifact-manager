@@ -72,7 +72,7 @@ const EventHandlers = (() => {
                 title: document.getElementById('title').value,
                 description: document.getElementById('description').value,
                 url: document.getElementById('url').value,
-                documentType: document.getElementById('docType').value,
+                documentationType: document.getElementById('docType').value,
                 author: document.getElementById('author').value,
                 currentVersion: document.getElementById('version').value,
                 programmingLanguage: document.getElementById('language').value,
@@ -93,7 +93,7 @@ const EventHandlers = (() => {
                 App.ui.modals.hide(document.getElementById('artifactModal'));
             } catch (error) {
                 console.error('Error saving artifact:', error);
-                App.utils.showError('Failed to save artifact.');
+                alert('Failed to save artifact: ' + (error.response?.data?.errors ? JSON.stringify(error.response.data.errors) : error.message));
             }
         },
         
