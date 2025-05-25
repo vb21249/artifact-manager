@@ -129,19 +129,34 @@ const EventHandlers = (() => {
             const artifactId = document.getElementById('versionArtifactId').value;
             const versionData = {
                 versionNumber: document.getElementById('versionNumber').value,
-                notes: document.getElementById('versionNotes').value,
+                notes: document.getElementById('versionChanges').value,
                 downloadUrl: document.getElementById('downloadUrl').value
             };
             
             try {
-                await App.addArtifactVersion(artifactId, versionData);
-                App.ui.modals.hide(document.getElementById('versionModal'));
+                // Validate inputs
+                if (!versionData.versionNumber) {
+                    throw new Error('Version number is required');
+                }
                 
-                // Refresh artifact details
-                App.showArtifactDetails(artifactId);
+                // Add the version
+                const result = await window.App.api.artifacts.addVersion(artifactId, versionData);
+                
+                if (result) {
+                    // Close the version modal
+                    window.App.ui.modals.hide(document.getElementById('versionModal'));
+                    
+                    // Show success message
+                    alert('Version added successfully!');
+                    
+                    // Refresh artifact details
+                    window.App.showArtifactDetails(artifactId);
+                } else {
+                    throw new Error('Failed to add version');
+                }
             } catch (error) {
                 console.error('Error adding version:', error);
-                App.utils.showError('Failed to add version.');
+                alert('Failed to add version: ' + error.message);
             }
         },
         

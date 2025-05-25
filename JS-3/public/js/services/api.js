@@ -111,7 +111,11 @@ const ApiService = (() => {
             
             getVersions: async (id) => {
                 try {
-                    console.log('Versions endpoint not implemented in API, returning empty array');
+                    // Since we're now storing versions in the artifact model directly,
+                    // we need to access it through the global window object
+                    if (window.App && window.App.models && window.App.models.artifact) {
+                        return window.App.models.artifact.getVersions(id);
+                    }
                     return [];
                 } catch (error) {
                     handleError(error, `Error fetching versions for artifact ${id}`);
@@ -183,15 +187,24 @@ const ApiService = (() => {
             
             addVersion: async (artifactId, versionData) => {
                 try {
-                    const response = await fetch(`${API_BASE}/artifacts/${artifactId}/versions`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(versionData)
-                    });
-                    
-                    if (!response.ok) throw new Error('Failed to add version');
-                    return await response.json();
+                    // Since we're now storing versions in the artifact model directly,
+                    // we need to access it through the global window object
+                    if (window.App && window.App.models && window.App.models.artifact) {
+                        const artifact = window.App.models.artifact.getById(artifactId);
+                        if (!artifact) {
+                            throw new Error('Artifact not found');
+                        }
+                        
+                        // Add the version client-side
+                        const newVersion = window.App.models.artifact.addVersion(artifactId, versionData);
+                        console.log('Added version successfully:', newVersion);
+                        
+                        return newVersion;
+                    } else {
+                        throw new Error('Artifact model not available');
+                    }
                 } catch (error) {
+                    console.error('Error in addVersion:', error);
                     handleError(error, `Error adding version to artifact ${artifactId}`);
                     return null;
                 }

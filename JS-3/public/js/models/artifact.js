@@ -68,7 +68,37 @@ const ArtifactModel = (() => {
         },
         getUniqueLanguages: () => [...new Set(artifacts.map(a => a.programmingLanguage).filter(Boolean))],
         getUniqueFrameworks: () => [...new Set(artifacts.map(a => a.framework).filter(Boolean))],
-        getUniqueLicenses: () => [...new Set(artifacts.map(a => a.licenseType).filter(Boolean))]
+        getUniqueLicenses: () => [...new Set(artifacts.map(a => a.licenseType).filter(Boolean))],
+        
+        // Version management
+        getVersions: (artifactId) => {
+            const artifact = artifacts.find(a => a.id === artifactId);
+            return artifact?.versions || [];
+        },
+        
+        addVersion: (artifactId, versionData) => {
+            const artifact = artifacts.find(a => a.id === artifactId);
+            if (!artifact) return null;
+            
+            // Initialize versions array if it doesn't exist
+            if (!artifact.versions) {
+                artifact.versions = [];
+            }
+            
+            // Add created timestamp
+            const newVersion = {
+                ...versionData,
+                created: new Date().toISOString()
+            };
+            
+            // Add to versions array
+            artifact.versions.push(newVersion);
+            
+            // Update the artifact's current version
+            artifact.currentVersion = versionData.versionNumber;
+            
+            return newVersion;
+        }
     };
 })();
 

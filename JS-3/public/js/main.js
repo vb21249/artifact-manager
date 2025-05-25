@@ -48,33 +48,53 @@ const App = (() => {
         return artifacts;
     };
     
-    // Public methods
+    // Public API
     return {
-        // Initialize the app
-        init,
-        
         // Models
         models: {
             artifact: ArtifactModel,
             category: CategoryModel
         },
         
-        // Services
+        // API Service
         api: ApiService,
         
-        // UI components
+        // UI Components
         ui: UI,
         
-        // Utilities
+        // Utils
         utils: Utils,
         
-        // Global state
-        get draggedItem() { return draggedItem; },
-        set draggedItem(item) { draggedItem = item; },
-        get draggedItemType() { return draggedItemType; },
-        set draggedItemType(type) { draggedItemType = type; },
+        // Initialize the application
+        init,
         
-        // Category operations
+        // Getters for drag and drop
+        getDraggedItem: () => draggedItem,
+        getDraggedItemType: () => draggedItemType,
+        
+        // Setters for drag and drop
+        setDraggedItem: (item, type) => {
+            draggedItem = item;
+            draggedItemType = type;
+        },
+        
+        // Data loading methods
+        loadCategories,
+        loadArtifacts,
+        
+        // Artifact methods
+        createArtifact: async (artifactData) => {
+            try {
+                const artifact = await ApiService.artifacts.create(artifactData);
+                ArtifactModel.add(artifact);
+                UI.artifacts.render();
+                return artifact;
+            } catch (error) {
+                Utils.showError('Failed to create artifact.');
+                throw error;
+            }
+        },
+        
         selectCategory: (categoryId) => {
             CategoryModel.setSelected(categoryId);
             
@@ -141,7 +161,6 @@ const App = (() => {
             }
         },
         
-        // Artifact operations
         selectArtifact: (artifactId) => {
             ArtifactModel.setSelected(artifactId);
             
@@ -153,20 +172,6 @@ const App = (() => {
             const selectedItem = document.querySelector(`.artifact-item[data-id="${artifactId}"]`);
             if (selectedItem) {
                 selectedItem.classList.add('selected');
-            }
-        },
-        
-        createArtifact: async (artifactData) => {
-            try {
-                console.log("Artifact date to save:", artifactData);
-                const newArtifact = await ApiService.artifacts.create(artifactData);
-                ArtifactModel.add(newArtifact);
-                UI.artifacts.render();
-                UI.forms.populateFilters();
-                return newArtifact;
-            } catch (error) {
-                Utils.showError('Failed to create artifact.');
-                throw error;
             }
         },
         
@@ -217,7 +222,6 @@ const App = (() => {
             }
         },
         
-        // Form handling
         showNewArtifactForm: () => {
             // Reset form
             document.getElementById('artifactForm').reset();
@@ -319,8 +323,10 @@ const App = (() => {
     };
 })();
 
-// Make App globally available
+// Make App globally accessible
 window.App = App;
 
-// Initialize the application when DOM is loaded
+// Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', App.init);
+
+export default App;

@@ -94,6 +94,15 @@ app.put('/api/artifacts/:id/move', async (req, res) => {
   }
 });
 
+app.post('/api/artifacts/:id/versions', async (req, res) => {
+  try {
+    const response = await axios.post(`${API_URL}/Artifacts/${req.params.id}/versions`, req.body);
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 // API proxy routes for Categories
 app.get('/api/categories', async (req, res) => {
   try {

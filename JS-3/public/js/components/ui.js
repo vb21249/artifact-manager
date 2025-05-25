@@ -62,6 +62,19 @@ const UI = (() => {
                 nameSpan.textContent = category.name;
                 categoryItem.appendChild(nameSpan);
                 
+                // Add delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '&times;'; // × symbol
+                deleteBtn.title = 'Delete category';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent category selection
+                    if (confirm(`Are you sure you want to delete "${category.name}"?`)) {
+                        App.deleteCategory(category.id);
+                    }
+                });
+                categoryItem.appendChild(deleteBtn);
+                
                 // Add event listeners
                 categoryItem.addEventListener('click', (e) => {
                     if (e.target === expander && hasChildren) {
@@ -319,6 +332,25 @@ const UI = (() => {
                 detailsDiv.appendChild(tagsDiv);
                 artifactItem.appendChild(detailsDiv);
                 
+                // Add action buttons container
+                const actionBtns = document.createElement('div');
+                actionBtns.className = 'artifact-actions';
+                
+                // Add delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '&times;'; // × symbol
+                deleteBtn.title = 'Delete artifact';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent artifact selection
+                    if (confirm(`Are you sure you want to delete "${artifact.title}"?`)) {
+                        App.deleteArtifact(artifact.id);
+                    }
+                });
+                actionBtns.appendChild(deleteBtn);
+                
+                artifactItem.appendChild(actionBtns);
+                
                 // Set up drag and drop
                 artifactItem.addEventListener('dragstart', (e) => {
                     App.draggedItem = artifact;
@@ -376,7 +408,7 @@ const UI = (() => {
                             versionItem.innerHTML = `
                                 <div class="version-number">v${version.versionNumber}</div>
                                 <div class="version-notes">${version.notes || 'No release notes'}</div>
-                                <div class="version-date">${version.created ? App.utils.formatDate(version.created) : 'Unknown date'}</div>
+                                <div class="version-date">${version.created ? new Date(version.created).toLocaleDateString() : 'Unknown date'}</div>
                                 ${version.downloadUrl ? `<a href="${version.downloadUrl}" class="download-link" target="_blank">Download</a>` : ''}
                             `;
                             versionsContainer.appendChild(versionItem);
