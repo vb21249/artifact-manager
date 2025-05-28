@@ -112,13 +112,10 @@ const ApiService = (() => {
             
             getVersions: async (id) => {
                 try {
-                    // Since we're now storing versions in the artifact model directly,
-                    // we need to access it through the global window object
+                    // Check if we have the artifact in the client-side model
                     if (window.App && window.App.models && window.App.models.artifact) {
-                        // First check if the artifact exists in the client-side model
                         let artifact = window.App.models.artifact.getById(id);
                         
-                        // If not found in the client-side model, try to fetch it from the API
                         if (!artifact) {
                             console.log(`Artifact ${id} not found in client model when getting versions, fetching from API...`);
                             try {
@@ -128,17 +125,40 @@ const ApiService = (() => {
                                     artifact = await response.json();
                                     // Add it to the client-side model
                                     window.App.models.artifact.add(artifact);
-                                    console.log(`Added artifact ${id} to client model when getting versions`);
+                                    console.log(`Added artifact ${id} to client model`);
+                                } else {
+                                    throw new Error('Artifact not found in API');
                                 }
                             } catch (fetchError) {
-                                console.error('Error fetching artifact for versions:', fetchError);
+                                console.error('Error fetching artifact:', fetchError);
+                                throw new Error('Artifact not found');
                             }
                         }
                         
-                        // Now try to get the versions
-                        return window.App.models.artifact.getVersions(id) || [];
+                        if (artifact && artifact.versions && artifact.versions.length > 0) {
+                            console.log(`Using versions from client model for artifact ${id}:`, artifact.versions);
+                            return artifact.versions;
+                        }
                     }
-                    return [];
+                    
+                    // If we don't have versions in the client model, fetch from API
+                    console.log(`Fetching versions from API for artifact ${id}`);
+                    const response = await fetch(`${API_BASE}/artifacts/${id}/versions`);
+                    if (!response.ok) throw new Error('Failed to fetch versions');
+                    
+                    const versions = await response.json();
+                    console.log(`Versions from API for artifact ${id}:`, versions);
+                    
+                    // Store versions in the client model
+                    if (window.App && window.App.models && window.App.models.artifact) {
+                        const artifact = window.App.models.artifact.getById(id);
+                        if (artifact) {
+                            artifact.versions = versions;
+                            console.log(`Updated versions in client model for artifact ${id}`);
+                        }
+                    }
+                    
+                    return versions;
                 } catch (error) {
                     handleError(error, `Error fetching versions for artifact ${id}`);
                     return [];
@@ -241,6 +261,12 @@ const ApiService = (() => {
                     // Get the response data
                     const newVersionData = await response.json();
                     console.log('Version added successfully via API:', newVersionData);
+                    console.log('API response version data keys:', Object.keys(newVersionData));
+                    
+                    // Log all properties of the response for debugging
+                    for (const key in newVersionData) {
+                        console.log(`API response version data [${key}]:`, newVersionData[key]);
+                    }
                     
                     // Update the client-side model
                     if (window.App && window.App.models && window.App.models.artifact) {
@@ -272,12 +298,28 @@ const ApiService = (() => {
                         }
                         
                         // Add the version to the client-side model
+                        // Use data from the API response when available
                         const clientVersionData = {
-                            versionNumber: apiVersionData.versionNumber,
-                            notes: apiVersionData.changes,
-                            downloadUrl: apiVersionData.downloadUrl,
-                            created: newVersionData.created || new Date().toISOString()
+                            versionNumber: newVersionData.versionNumber || apiVersionData.versionNumber,
+                            // Map changes to notes for consistency in the client model
+                            notes: newVersionData.changes || apiVersionData.changes,
+                            changes: newVersionData.changes || apiVersionData.changes,
+                            downloadUrl: newVersionData.downloadUrl || apiVersionData.downloadUrl
                         };
+                        
+                        // Handle different date field names from the API
+                        if (newVersionData.created) {
+                            clientVersionData.created = newVersionData.created;
+                        } else if (newVersionData.dateCreated) {
+                            clientVersionData.created = newVersionData.dateCreated;
+                        } else if (newVersionData.createdAt) {
+                            clientVersionData.created = newVersionData.createdAt;
+                        } else {
+                            // Fallback to current date if no date is provided
+                            clientVersionData.created = new Date().toISOString();
+                        }
+                        
+                        console.log('Adding version to client model with data:', clientVersionData);
                         
                         const newVersion = window.App.models.artifact.addVersion(artifactId, clientVersionData);
                         console.log('Added version to client model:', newVersion);

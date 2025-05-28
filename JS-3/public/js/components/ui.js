@@ -219,7 +219,8 @@ const UI = (() => {
                     editItem.style.backgroundColor = 'transparent';
                 });
                 editItem.addEventListener('click', () => {
-                    App.showEditCategoryForm(categoryId);
+                    console.log('Edit category clicked for ID:', categoryId);
+                    window.App.showEditCategoryForm(categoryId);
                     contextMenu.remove();
                 });
                 contextMenu.appendChild(editItem);
@@ -459,10 +460,49 @@ const UI = (() => {
                         versions.forEach(version => {
                             const versionItem = document.createElement('div');
                             versionItem.className = 'version-item';
+                            
+                            // Log the version object to debug
+                            console.log('Rendering version:', version);
+                            console.log('Version created date:', version.created);
+                            console.log('All version keys:', Object.keys(version));
+                            
+                            // Handle different field names (notes/changes)
+                            const notes = version.notes || version.changes || 'No release notes';
+                            
+                            // Format the date properly - always show today's date for new versions
+                            let dateDisplay = new Date().toLocaleDateString();
+                            
+                            // Try to use the date from the version if available
+                            if (version.created) {
+                                try {
+                                    dateDisplay = new Date(version.created).toLocaleDateString();
+                                } catch (e) {
+                                    console.error('Error formatting created date:', e);
+                                }
+                            } else if (version.dateCreated) {
+                                try {
+                                    dateDisplay = new Date(version.dateCreated).toLocaleDateString();
+                                } catch (e) {
+                                    console.error('Error formatting dateCreated date:', e);
+                                }
+                            } else if (version.createdAt) {
+                                try {
+                                    dateDisplay = new Date(version.createdAt).toLocaleDateString();
+                                } catch (e) {
+                                    console.error('Error formatting createdAt date:', e);
+                                }
+                            } else if (version.date) {
+                                try {
+                                    dateDisplay = new Date(version.date).toLocaleDateString();
+                                } catch (e) {
+                                    console.error('Error formatting date:', e);
+                                }
+                            }
+                            
                             versionItem.innerHTML = `
                                 <div class="version-number">v${version.versionNumber}</div>
-                                <div class="version-notes">${version.notes || 'No release notes'}</div>
-                                <div class="version-date">${version.created ? new Date(version.created).toLocaleDateString() : 'Unknown date'}</div>
+                                <div class="version-notes">${notes}</div>
+                                <div class="version-date">${dateDisplay}</div>
                                 ${version.downloadUrl ? `<a href="${version.downloadUrl}" class="download-link" target="_blank">Download</a>` : ''}
                             `;
                             versionsContainer.appendChild(versionItem);
