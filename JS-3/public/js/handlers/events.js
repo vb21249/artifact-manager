@@ -52,6 +52,22 @@ const EventHandlers = (() => {
             frameworkFilter.addEventListener('change', App.ui.artifacts.render);
             licenseFilter.addEventListener('change', App.ui.artifacts.render);
             
+            // Show All Artifacts button
+            const showAllBtn = document.getElementById('showAllBtn');
+            if (showAllBtn) {
+                showAllBtn.addEventListener('click', () => {
+                    console.log('Show All button clicked');
+                    // Clear category selection
+                    App.models.category.setSelected(null);
+                    // Clear any selected category UI
+                    document.querySelectorAll('.category-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    // Render all artifacts
+                    App.ui.artifacts.render();
+                });
+            }
+            
             // Context menu for categories (right-click)
             document.getElementById('categoriesTree').addEventListener('contextmenu', EventHandlers.handleCategoryContextMenu);
             
@@ -129,31 +145,37 @@ const EventHandlers = (() => {
             const artifactId = document.getElementById('versionArtifactId').value;
             const versionData = {
                 versionNumber: document.getElementById('versionNumber').value,
-                notes: document.getElementById('versionChanges').value,
+                notes: document.getElementById('versionChanges').value, // This will be mapped to 'changes' in the API
                 downloadUrl: document.getElementById('downloadUrl').value
             };
-            
+
             try {
                 // Validate inputs
                 if (!versionData.versionNumber) {
                     throw new Error('Version number is required');
                 }
+
+                console.log('Submitting version data:', versionData);
                 
                 // Add the version
                 const result = await window.App.api.artifacts.addVersion(artifactId, versionData);
+
+                // If we reach here, the version was added successfully
+                console.log('Version added successfully:', result);
                 
-                if (result) {
-                    // Close the version modal
-                    window.App.ui.modals.hide(document.getElementById('versionModal'));
-                    
-                    // Show success message
-                    alert('Version added successfully!');
-                    
-                    // Refresh artifact details
-                    window.App.showArtifactDetails(artifactId);
-                } else {
-                    throw new Error('Failed to add version');
-                }
+                // Close the version modal
+                window.App.ui.modals.hide(document.getElementById('versionModal'));
+                
+                // Show success message
+                alert('Version added successfully!');
+                
+                // Clear the form
+                document.getElementById('versionNumber').value = '';
+                document.getElementById('versionChanges').value = '';
+                document.getElementById('downloadUrl').value = '';
+                
+                // Refresh artifact details without a full page reload
+                window.App.showArtifactDetails(artifactId);
             } catch (error) {
                 console.error('Error adding version:', error);
                 alert('Failed to add version: ' + error.message);

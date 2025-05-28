@@ -78,17 +78,21 @@ const ArtifactModel = (() => {
         
         addVersion: (artifactId, versionData) => {
             const artifact = artifacts.find(a => a.id === artifactId);
-            if (!artifact) return null;
+            
+            if (!artifact) {
+                console.error(`Artifact with ID ${artifactId} not found`);
+                return null;
+            }
             
             // Initialize versions array if it doesn't exist
             if (!artifact.versions) {
                 artifact.versions = [];
             }
             
-            // Add created timestamp
+            // Add created timestamp if not provided
             const newVersion = {
                 ...versionData,
-                created: new Date().toISOString()
+                created: versionData.created || new Date().toISOString()
             };
             
             // Add to versions array
@@ -96,6 +100,8 @@ const ArtifactModel = (() => {
             
             // Update the artifact's current version
             artifact.currentVersion = versionData.versionNumber;
+            
+            console.log(`Version ${versionData.versionNumber} added to artifact ${artifactId}`, artifact);
             
             return newVersion;
         }

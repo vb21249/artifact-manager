@@ -95,7 +95,30 @@ const CategoryModel = (() => {
             }
             
             return false;
-        }
+        },
+        
+        // Get the full path of a category
+        getCategoryPath: (categoryId) => {
+            const path = [];
+            let currentCategory = categories.find(c => c.id === categoryId);
+            
+            // If category doesn't exist, return empty path
+            if (!currentCategory) return path;
+            
+            // Add the current category to the path
+            path.unshift(currentCategory.name);
+            
+            // Traverse up the parent chain
+            while (currentCategory.parentCategoryId) {
+                const parentCategory = categories.find(c => c.id === currentCategory.parentCategoryId);
+                if (!parentCategory) break;
+                
+                path.unshift(parentCategory.name);
+                currentCategory = parentCategory;
+            }
+            
+            return path;
+        },
     };
 })();
 

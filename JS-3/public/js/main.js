@@ -248,6 +248,9 @@ const App = (() => {
             document.getElementById('artifactId').value = artifact.id;
             document.getElementById('title').value = artifact.title || '';
             document.getElementById('description').value = artifact.description || '';
+            document.getElementById('url').value = artifact.url || '';
+            document.getElementById('docType').value = artifact.documentationType || '';
+            document.getElementById('author').value = artifact.author || '';
             document.getElementById('version').value = artifact.currentVersion || '';
             document.getElementById('language').value = artifact.programmingLanguage || '';
             document.getElementById('framework').value = artifact.framework || '';
@@ -315,8 +318,27 @@ const App = (() => {
         
         showArtifactDetails: async (artifactId) => {
             try {
+                console.log(`Showing details for artifact ${artifactId}`);
+                // First ensure the artifact is in the model
+                let artifact = ArtifactModel.getById(artifactId);
+                
+                if (!artifact) {
+                    console.log(`Artifact ${artifactId} not in model, fetching from API`);
+                    // Fetch from API if not in model
+                    artifact = await ApiService.artifacts.getById(artifactId);
+                    if (artifact) {
+                        // Add to model if found
+                        ArtifactModel.add(artifact);
+                    }
+                }
+                
+                if (!artifact) {
+                    throw new Error(`Artifact ${artifactId} not found`);
+                }
+                
                 await UI.artifacts.showDetails(artifactId);
             } catch (error) {
+                console.error(`Error showing artifact details:`, error);
                 Utils.showError('Failed to load artifact details.');
             }
         }

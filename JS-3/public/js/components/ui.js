@@ -260,7 +260,11 @@ const UI = (() => {
                     license: licenseFilter.value
                 };
                 
+                console.log('Filtering with:', filters);
+                console.log('All artifacts before filtering:', App.models.artifact.getAll());
+                
                 const filteredArtifacts = App.models.artifact.filter(filters);
+                console.log('Filtered artifacts:', filteredArtifacts);
                 
                 // Render each artifact
                 filteredArtifacts.forEach(artifact => {
@@ -304,6 +308,18 @@ const UI = (() => {
                 metaDiv.className = 'artifact-meta';
                 metaDiv.textContent = `Version ${artifact.currentVersion} • ${App.utils.formatDate(artifact.created)}`;
                 detailsDiv.appendChild(metaDiv);
+                
+                // Add category path if available
+                if (artifact.categoryId) {
+                    // Get the category for this artifact
+                    const category = window.App.models.category.getById(artifact.categoryId);
+                    if (category && category.path) {
+                        const pathDiv = document.createElement('div');
+                        pathDiv.className = 'artifact-path';
+                        pathDiv.textContent = `Path: ${category.path}`;
+                        detailsDiv.appendChild(pathDiv);
+                    }
+                }
                 
                 const tagsDiv = document.createElement('div');
                 tagsDiv.className = 'artifact-tags';
@@ -376,16 +392,49 @@ const UI = (() => {
             
             showDetails: async (artifactId) => {
                 try {
-                    const artifact = await App.api.artifacts.getById(artifactId);
+                    // Get the artifact from the client-side model first
+                    let artifact = window.App.models.artifact.getById(artifactId);
+                    
+                    // If not found in the model, fetch from API
+                    if (!artifact) {
+                        console.log(`Artifact ${artifactId} not in client model, fetching from API for details view`);
+                        artifact = await App.api.artifacts.getById(artifactId);
+                        
+                        // Add to client model if found
+                        if (artifact) {
+                            window.App.models.artifact.add(artifact);
+                        }
+                    }
+                    
                     if (!artifact) throw new Error('Artifact not found');
                     
-                    const versions = await App.api.artifacts.getVersions(artifactId);
+                    // Get versions from the artifact in the model if available
+                    let versions = artifact.versions || [];
+                    
+                    // If no versions in the model, try to fetch from API
+                    if (!versions || versions.length === 0) {
+                        console.log(`No versions found in client model for artifact ${artifactId}, fetching from API`);
+                        versions = await App.api.artifacts.getVersions(artifactId);
+                    }
+                    
+                    // Get category for path display
+                    let categoryPath = '';
+                    if (artifact.categoryId) {
+                        const category = window.App.models.category.getById(artifact.categoryId);
+                        if (category && category.path) {
+                            categoryPath = category.path;
+                        }
+                    }
                     
                     // Populate details
                     const detailsContainer = document.getElementById('artifactDetails');
                     detailsContainer.innerHTML = `
                         <h2>${artifact.title}</h2>
                         <div class="artifact-detail-description">${artifact.description || 'No description provided.'}</div>
+                        ${categoryPath ? 
+                            `<div class="artifact-path-details">
+                                <strong>Category Path:</strong> ${categoryPath}
+                            </div>` : ''}
                         <div class="artifact-detail-meta">
                             <div><strong>Version:</strong> ${artifact.currentVersion || 'Not specified'}</div>
                             <div><strong>Language:</strong> ${artifact.programmingLanguage || 'Not specified'}</div>
@@ -402,6 +451,11 @@ const UI = (() => {
                     versionsContainer.innerHTML = '';
                     
                     if (versions && versions.length > 0) {
+                        // Sort versions by version number (descending)
+                        versions.sort((a, b) => {
+                            return b.versionNumber.localeCompare(a.versionNumber, undefined, { numeric: true });
+                        });
+                        
                         versions.forEach(version => {
                             const versionItem = document.createElement('div');
                             versionItem.className = 'version-item';
