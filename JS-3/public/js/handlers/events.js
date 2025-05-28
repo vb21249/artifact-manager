@@ -183,23 +183,125 @@ const EventHandlers = (() => {
         },
         
         handleCategoryContextMenu: (e) => {
-            // Find the category item that was right-clicked
-            let target = e.target;
-            while (target && !target.classList.contains('category-item')) {
-                target = target.parentElement;
+            try {
+                // Find the category item that was right-clicked
+                let target = e.target;
+                while (target && !target.classList.contains('category-item')) {
+                    target = target.parentElement;
+                }
+                
+                if (!target) return;
+                
+                e.preventDefault();
+                
+                const categoryId = target.dataset.id;
+                if (!categoryId) return;
+
+                console.log("INFO: Category context menu for id:", categoryId);
+
+                // Create context menu directly here
+                // Remove any existing context menus
+                const existingMenu = document.querySelector('.context-menu');
+                if (existingMenu) {
+                    existingMenu.remove();
+                }
+                
+                // Create context menu
+                const contextMenu = document.createElement('div');
+                contextMenu.className = 'context-menu';
+                contextMenu.style.position = 'absolute';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                contextMenu.style.background = 'white';
+                contextMenu.style.border = '1px solid #ccc';
+                contextMenu.style.borderRadius = '3px';
+                contextMenu.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                contextMenu.style.padding = '5px 0';
+                contextMenu.style.zIndex = '1000';
+                
+                // Add Edit menu item
+                const editItem = document.createElement('div');
+                editItem.textContent = 'Edit';
+                editItem.style.padding = '5px 15px';
+                editItem.style.cursor = 'pointer';
+                editItem.addEventListener('mouseover', () => {
+                    editItem.style.backgroundColor = '#f0f0f0';
+                });
+                editItem.addEventListener('mouseout', () => {
+                    editItem.style.backgroundColor = 'transparent';
+                });
+                editItem.addEventListener('click', () => {
+                    try {
+                        console.log('Edit category clicked for ID:', categoryId);
+                        
+                        // Get the category from the model
+                        const category = window.App.models.category.getById(categoryId);
+                        console.log('Category found:', category);
+                        
+                        if (!category) {
+                            console.error(`Category ${categoryId} not found in model`);
+                            return;
+                        }
+                        
+                        // Populate form
+                        document.getElementById('categoryId').value = category.id;
+                        document.getElementById('categoryName').value = category.name || '';
+                        
+                        // Populate parent category select
+                        window.App.ui.forms.populateCategorySelects();
+                        document.getElementById('parentCategorySelect').value = category.parentCategoryId || '';
+                        
+                        // Update modal title
+                        document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+                        
+                        // Show modal directly
+                        const categoryModal = document.getElementById('categoryModal');
+                        console.log('Category modal element:', categoryModal);
+                        
+                        if (categoryModal) {
+                            categoryModal.style.display = 'block';
+                            console.log('Modal display style set to block');
+                        } else {
+                            console.error('Category modal element not found');
+                        }
+                    } catch (err) {
+                        console.error('Error in edit category click handler:', err);
+                    }
+                    
+                    contextMenu.remove();
+                });
+                contextMenu.appendChild(editItem);
+                
+                // Add Delete menu item
+                const deleteItem = document.createElement('div');
+                deleteItem.textContent = 'Delete';
+                deleteItem.style.padding = '5px 15px';
+                deleteItem.style.cursor = 'pointer';
+                deleteItem.addEventListener('mouseover', () => {
+                    deleteItem.style.backgroundColor = '#f0f0f0';
+                });
+                deleteItem.addEventListener('mouseout', () => {
+                    deleteItem.style.backgroundColor = 'transparent';
+                });
+                deleteItem.addEventListener('click', () => {
+                    if (confirm(`Are you sure you want to delete this category?`)) {
+                        window.App.deleteCategory(categoryId);
+                    }
+                    contextMenu.remove();
+                });
+                contextMenu.appendChild(deleteItem);
+                
+                // Add to document
+                document.body.appendChild(contextMenu);
+                
+                // Close context menu when clicking elsewhere
+                document.addEventListener('click', () => {
+                    contextMenu.remove();
+                }, { once: true });
+            } catch (error) {
+                console.error('Error in handleCategoryContextMenu:', error);
             }
-            
-            if (!target) return;
-            
-            e.preventDefault();
-            
-            const categoryId = target.dataset.id;
-            if (!categoryId) return;
-
-            console.log("INFO: Category id = ",  categoryId);
-
-            App.ui.categories.showContextMenu(e, categoryId);
-        }
+        },
     };
 })();
 

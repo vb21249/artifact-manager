@@ -65,7 +65,7 @@ const App = (() => {
         // Utils
         utils: Utils,
         
-        // Initialize the application
+        // Initialization
         init,
         
         // Getters for drag and drop
@@ -113,36 +113,46 @@ const App = (() => {
         
         createCategory: async (categoryData) => {
             try {
-                const newCategory = await ApiService.categories.create(categoryData);
-                await loadCategories(); // Refresh to get proper hierarchy
+                const category = await ApiService.categories.create(categoryData);
+                CategoryModel.add(category);
                 UI.categories.render();
-                return newCategory;
+                return category;
             } catch (error) {
                 Utils.showError('Failed to create category.');
                 throw error;
             }
         },
         
-        updateCategory: async (id, categoryData) => {
+        updateCategory: async (categoryId, categoryData) => {
             try {
-                const updatedCategory = await ApiService.categories.update(id, categoryData);
-                await loadCategories(); // Refresh to get proper hierarchy
-                UI.categories.render();
-                return updatedCategory;
+                console.log(`Updating category ${categoryId} with data:`, categoryData);
+                const updatedCategory = await ApiService.categories.update(categoryId, categoryData);
+                
+                if (updatedCategory) {
+                    // Update the category in the model
+                    CategoryModel.update(updatedCategory);
+                    // Re-render the categories tree
+                    UI.categories.render();
+                    console.log('Category updated successfully');
+                    return updatedCategory;
+                } else {
+                    throw new Error('Failed to update category');
+                }
             } catch (error) {
+                console.error('Error updating category:', error);
                 Utils.showError('Failed to update category.');
                 throw error;
             }
         },
         
-        deleteCategory: async (id) => {
+        deleteCategory: async (categoryId) => {
             try {
-                await ApiService.categories.delete(id);
-                await loadCategories(); // Refresh to get proper hierarchy
-                CategoryModel.setSelected(null);
-                UI.categories.render();
-                UI.artifacts.render();
-                return true;
+                const success = await ApiService.categories.delete(categoryId);
+                if (success) {
+                    CategoryModel.remove(categoryId);
+                    UI.categories.render();
+                }
+                return success;
             } catch (error) {
                 Utils.showError('Failed to delete category.');
                 throw error;
@@ -271,23 +281,27 @@ const App = (() => {
             // Reset form
             document.getElementById('categoryForm').reset();
             document.getElementById('categoryId').value = '';
-            document.getElementById('categoryModalTitle').textContent = 'Add New Category';
             
             // Populate parent category select
             UI.forms.populateCategorySelects();
             
-            // Set default parent if a category is selected
-            if (CategoryModel.getSelected()) {
-                document.getElementById('parentCategorySelect').value = CategoryModel.getSelected();
-            }
+            // Update modal title
+            document.getElementById('categoryModalTitle').textContent = 'Add New Category';
             
             // Show modal
-            UI.modals.show(document.getElementById('categoryModal'));
+            document.getElementById('categoryModal').style.display = 'block';
         },
         
         showEditCategoryForm: (categoryId) => {
+            console.log(`Showing edit form for category ${categoryId}`);
+            
             const category = CategoryModel.getById(categoryId);
-            if (!category) return;
+            if (!category) {
+                console.error(`Category ${categoryId} not found in model`);
+                return;
+            }
+            
+            console.log('Category data:', category);
             
             // Populate form
             document.getElementById('categoryId').value = category.id;
@@ -300,8 +314,8 @@ const App = (() => {
             // Update modal title
             document.getElementById('categoryModalTitle').textContent = 'Edit Category';
             
-            // Show modal
-            UI.modals.show(document.getElementById('categoryModal'));
+            // Show modal directly
+            document.getElementById('categoryModal').style.display = 'block';
         },
         
         showAddVersionForm: (artifactId) => {

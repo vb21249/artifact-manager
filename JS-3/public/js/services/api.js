@@ -112,55 +112,66 @@ const ApiService = (() => {
             
             getVersions: async (id) => {
                 try {
-                    // Check if we have the artifact in the client-side model
+                    console.log(`Attempting to fetch versions for artifact ${id}`);
+                    
+                    // First try to get versions from the client-side model
                     if (window.App && window.App.models && window.App.models.artifact) {
-                        let artifact = window.App.models.artifact.getById(id);
-                        
-                        if (!artifact) {
-                            console.log(`Artifact ${id} not found in client model when getting versions, fetching from API...`);
-                            try {
-                                // Fetch the artifact from the API
-                                const response = await fetch(`${API_BASE}/artifacts/${id}`);
-                                if (response.ok) {
-                                    artifact = await response.json();
-                                    // Add it to the client-side model
-                                    window.App.models.artifact.add(artifact);
-                                    console.log(`Added artifact ${id} to client model`);
-                                } else {
-                                    throw new Error('Artifact not found in API');
-                                }
-                            } catch (fetchError) {
-                                console.error('Error fetching artifact:', fetchError);
-                                throw new Error('Artifact not found');
-                            }
-                        }
+                        const artifact = window.App.models.artifact.getById(id);
                         
                         if (artifact && artifact.versions && artifact.versions.length > 0) {
-                            console.log(`Using versions from client model for artifact ${id}:`, artifact.versions);
+                            console.log(`Using cached versions from client model for artifact ${id}`);
                             return artifact.versions;
                         }
                     }
                     
                     // If we don't have versions in the client model, fetch from API
                     console.log(`Fetching versions from API for artifact ${id}`);
-                    const response = await fetch(`${API_BASE}/artifacts/${id}/versions`);
-                    if (!response.ok) throw new Error('Failed to fetch versions');
                     
-                    const versions = await response.json();
-                    console.log(`Versions from API for artifact ${id}:`, versions);
-                    
-                    // Store versions in the client model
-                    if (window.App && window.App.models && window.App.models.artifact) {
-                        const artifact = window.App.models.artifact.getById(id);
-                        if (artifact) {
-                            artifact.versions = versions;
-                            console.log(`Updated versions in client model for artifact ${id}`);
+                    // Check if the endpoint exists
+                    try {
+                        const response = await fetch(`${API_BASE}/artifacts/${id}/versions`);
+                        
+                        if (response.ok) {
+                            const versions = await response.json();
+                            console.log(`Successfully fetched ${versions.length} versions from API for artifact ${id}`);
+                            
+                            // Store versions in the client model
+                            if (window.App && window.App.models && window.App.models.artifact) {
+                                const artifact = window.App.models.artifact.getById(id);
+                                if (artifact) {
+                                    artifact.versions = versions;
+                                }
+                            }
+                            
+                            return versions;
+                        } else {
+                            console.warn(`API endpoint for versions returned status ${response.status}`);
+                            
+                            // Fallback: try to get versions from the artifact details
+                            console.log(`Attempting to get versions from artifact details for ${id}`);
+                            const detailsResponse = await fetch(`${API_BASE}/artifacts/${id}`);
+                            
+                            if (detailsResponse.ok) {
+                                const artifactDetails = await detailsResponse.json();
+                                
+                                if (artifactDetails && artifactDetails.versions) {
+                                    console.log(`Retrieved versions from artifact details for ${id}`);
+                                    return artifactDetails.versions || [];
+                                } else {
+                                    console.log(`No versions found in artifact details for ${id}`);
+                                    return [];
+                                }
+                            } else {
+                                console.error(`Failed to fetch artifact details for ${id}`);
+                                return [];
+                            }
                         }
+                    } catch (fetchError) {
+                        console.error(`Network error fetching versions for artifact ${id}:`, fetchError);
+                        return [];
                     }
-                    
-                    return versions;
                 } catch (error) {
-                    handleError(error, `Error fetching versions for artifact ${id}`);
+                    console.error(`Error in getVersions for artifact ${id}:`, error);
                     return [];
                 }
             },

@@ -220,7 +220,12 @@ const UI = (() => {
                 });
                 editItem.addEventListener('click', () => {
                     console.log('Edit category clicked for ID:', categoryId);
-                    window.App.showEditCategoryForm(categoryId);
+                    // Make sure we're using the global window.App object
+                    if (window.App && typeof window.App.showEditCategoryForm === 'function') {
+                        window.App.showEditCategoryForm(categoryId);
+                    } else {
+                        console.error('App.showEditCategoryForm is not available', window.App);
+                    }
                     contextMenu.remove();
                 });
                 contextMenu.appendChild(editItem);

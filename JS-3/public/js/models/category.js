@@ -67,11 +67,37 @@ const CategoryModel = (() => {
             return category;
         },
         
-        update: (id, updatedCategory) => {
-            const index = flattenedCategories.findIndex(c => c.id === id);
+        update: (updatedCategory) => {
+            // Update in flattened categories
+            const index = flattenedCategories.findIndex(c => c.id === updatedCategory.id);
             if (index !== -1) {
                 flattenedCategories[index] = updatedCategory;
             }
+            
+            // Update in hierarchical structure
+            const updateInHierarchy = (cats) => {
+                for (let i = 0; i < cats.length; i++) {
+                    if (cats[i].id === updatedCategory.id) {
+                        // Preserve subcategories if they exist
+                        const subcategories = cats[i].subcategories;
+                        cats[i] = { ...updatedCategory };
+                        if (subcategories) {
+                            cats[i].subcategories = subcategories;
+                        }
+                        return true;
+                    }
+                    
+                    if (cats[i].subcategories && cats[i].subcategories.length > 0) {
+                        if (updateInHierarchy(cats[i].subcategories)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+            
+            updateInHierarchy(categories);
+            
             return updatedCategory;
         },
         
