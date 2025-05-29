@@ -12,7 +12,7 @@ services:
   frontend-3-iteration:
     build: .
     ports:
-      - "4000:3000"
+      - "3000:3000"
     volumes:
       - ./public:/app/public
     environment:

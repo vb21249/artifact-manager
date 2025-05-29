@@ -75,29 +75,46 @@ namespace CourseWork.API.Controllers
         [ProducesResponseType(400)]
         public IActionResult CreateArtifact([FromBody] CreateArtifactDto dto)
         {
-            var artifact = new SoftwareDevArtifact
+            try
             {
-                Title = dto.Title,
-                Description = dto.Description,
-                Url = dto.Url,
-                DocumentationType = dto.DocumentationType,
-                Created = DateTime.UtcNow,
-                Author = dto.Author,
-                CurrentVersion = dto.CurrentVersion,
-                ProgrammingLanguage = dto.ProgrammingLanguage,
-                Framework = dto.Framework,
-                LicenseType = dto.LicenseType,
-                CategoryId = dto.CategoryId
-            };
+                // Validate the category exists
+                var category = _unitOfWork.CategoryRepository.GetById(dto.CategoryId);
+                if (category == null)
+                    return BadRequest(new { message = $"Category with ID {dto.CategoryId} not found" });
 
-            var validationResult = _validator.Validate(artifact);
-            if (!validationResult.IsValid)
-                return BadRequest(validationResult.Errors);
+                // Get the count of artifacts in this category for positioning
+                var artifactCount = _unitOfWork.SoftwareDevArtifactRepository.GetAll()
+                    .Count(a => a.CategoryId == dto.CategoryId);
 
-            _unitOfWork.SoftwareDevArtifactRepository.Add(artifact);
-            _unitOfWork.Save();
+                var artifact = new SoftwareDevArtifact
+                {
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Url = dto.Url,
+                    DocumentationType = dto.DocumentationType,
+                    Created = DateTime.UtcNow,
+                    Author = dto.Author,
+                    CurrentVersion = dto.CurrentVersion,
+                    ProgrammingLanguage = dto.ProgrammingLanguage,
+                    Framework = dto.Framework,
+                    LicenseType = dto.LicenseType,
+                    CategoryId = dto.CategoryId,
+                    Position = artifactCount // Set position to end of list
+                };
 
-            return CreatedAtAction(nameof(GetArtifact), new { id = artifact.Id }, MapToArtifactDto(artifact));
+                var validationResult = _validator.Validate(artifact);
+                if (!validationResult.IsValid)
+                    return BadRequest(validationResult.Errors);
+
+                _unitOfWork.SoftwareDevArtifactRepository.Add(artifact);
+                _unitOfWork.Save();
+
+                return CreatedAtAction(nameof(GetArtifact), new { id = artifact.Id }, MapToArtifactDto(artifact));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating the artifact", error = ex.Message });
+            }
         }
 
         /// <summary>
@@ -316,6 +333,106 @@ namespace CourseWork.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while performing advanced search", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Moves an artifact to a different category and/or position
+        /// </summary>
+        /// <param name="id">The ID of the artifact to move</param>
+        /// <param name="request">The move request containing the new category ID and optional position</param>
+        /// <returns>Updated category tree</returns>
+        [HttpPut("{id}/move")]
+        public IActionResult MoveArtifact(int id, [FromBody] MoveArtifactRequest request)
+        {
+            try
+            {
+                var artifact = _unitOfWork.SoftwareDevArtifactRepository.GetById(id);
+                if (artifact == null)
+                    return NotFound(new { message = $"Artifact with ID {id} not found" });
+
+                var targetCategory = _unitOfWork.CategoryRepository.GetById(request.NewCategoryId);
+                if (targetCategory == null)
+                    return NotFound(new { message = $"Target category with ID {request.NewCategoryId} not found" });
+
+                // Get all artifacts in the target category to manage positions
+                var categoryArtifacts = _unitOfWork.SoftwareDevArtifactRepository.GetAll()
+                    .Where(a => a.CategoryId == request.NewCategoryId)
+                    .OrderBy(a => a.Position)
+                    .ToList();
+
+                // Store the old category ID for tree refresh
+                var oldCategoryId = artifact.CategoryId;
+                
+                // Update the artifact's category
+                artifact.CategoryId = request.NewCategoryId;
+                
+                // Handle position if specified
+                if (request.Position.HasValue)
+                {
+                    int newPosition = Math.Min(request.Position.Value, categoryArtifacts.Count);
+                    newPosition = Math.Max(0, newPosition); // Ensure position is not negative
+                    
+                    // Update positions of other artifacts in the category
+                    foreach (var a in categoryArtifacts)
+                    {
+                        if (a.Position >= newPosition)
+                        {
+                            a.Position++;
+                        }
+                    }
+                    
+                    artifact.Position = newPosition;
+                }
+                else
+                {
+                    // If no position specified, put at the end
+                    artifact.Position = categoryArtifacts.Count;
+                }
+
+                _unitOfWork.SoftwareDevArtifactRepository.Update(artifact);
+                _unitOfWork.Save();
+
+                // Return the updated category tree
+                var updatedCategories = _unitOfWork.CategoryRepository.GetAll()
+                    .Where(c => c.ParentCategoryId == null)
+                    .OrderBy(c => c.Position)
+                    .ToList();
+
+                var result = updatedCategories.Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    ParentCategoryId = c.ParentCategoryId,
+                    Position = c.Position,
+                    Path = c.Path,
+                    Artifacts = _unitOfWork.SoftwareDevArtifactRepository.GetAll()
+                        .Where(a => a.CategoryId == c.Id)
+                        .OrderBy(a => a.Position)
+                        .Select(MapToArtifactDto)
+                        .ToList(),
+                    Subcategories = _unitOfWork.CategoryRepository.GetAll()
+                        .Where(sc => sc.ParentCategoryId == c.Id)
+                        .OrderBy(sc => sc.Position)
+                        .Select(sc => new CategoryDto
+                        {
+                            Id = sc.Id,
+                            Name = sc.Name,
+                            ParentCategoryId = sc.ParentCategoryId,
+                            Position = sc.Position,
+                            Path = sc.Path
+                        })
+                        .ToList()
+                }).ToList();
+
+                return Ok(new { 
+                    message = "Artifact moved successfully",
+                    categories = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while moving the artifact", error = ex.Message });
             }
         }
 

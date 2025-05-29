@@ -80,7 +80,7 @@ class CategoryTree {
             const response = await fetch(`${this.apiBaseUrl}/Artifacts/filter/language?language=${encodeURIComponent(language)}`);
             if (!response.ok) throw new Error('Filter failed');
             const results = await response.json();
-            this.updateTreeWithResults(results);
+            await this.loadCategoryTreeWithArtifacts(results);
         } catch (error) {
             this.handleError(error);
         }
@@ -91,7 +91,7 @@ class CategoryTree {
             const response = await fetch(`${this.apiBaseUrl}/Artifacts/filter/framework?framework=${encodeURIComponent(framework)}`);
             if (!response.ok) throw new Error('Filter failed');
             const results = await response.json();
-            this.updateTreeWithResults(results);
+            await this.loadCategoryTreeWithArtifacts(results);
         } catch (error) {
             this.handleError(error);
         }
@@ -102,49 +102,10 @@ class CategoryTree {
             const response = await fetch(`${this.apiBaseUrl}/Artifacts/filter/license?licenseType=${encodeURIComponent(license)}`);
             if (!response.ok) throw new Error('Filter failed');
             const results = await response.json();
-            this.updateTreeWithResults(results);
+            await this.loadCategoryTreeWithArtifacts(results);
         } catch (error) {
             this.handleError(error);
         }
-    }
-
-    updateTreeWithResults(results) {
-        this.container.innerHTML = '';
-        
-        if (!results || results.length === 0) {
-            this.container.innerHTML = '<div class="no-results">No artifacts found</div>';
-            return;
-        }
-
-        const resultsList = document.createElement('div');
-        resultsList.className = 'results-list';
-        
-        results.forEach(artifact => {
-            const artifactDiv = document.createElement('div');
-            artifactDiv.className = 'artifact-item';
-            artifactDiv.innerHTML = `
-                <div class="artifact-header">
-                    <h3>${this.escapeHtml(artifact.title)}</h3>
-                </div>
-                <div class="artifact-details">
-                    <p>${this.escapeHtml(artifact.description)}</p>
-                    <div class="artifact-info">
-                        <span>Author: ${this.escapeHtml(artifact.author)}</span>
-                        <span>Version: ${this.escapeHtml(artifact.currentVersion)}</span>
-                        <span>Type: ${this.escapeHtml(artifact.documentationType)}</span>
-                        <a href="${artifact.url}" target="_blank">View Resource</a>
-                    </div>
-                    <div class="artifact-tech">
-                        <span>Language: ${this.escapeHtml(artifact.programmingLanguage)}</span>
-                        <span>Framework: ${this.escapeHtml(artifact.framework)}</span>
-                        <span>License: ${this.escapeHtml(artifact.licenseType)}</span>
-                    </div>
-                </div>
-            `;
-            resultsList.appendChild(artifactDiv);
-        });
-
-        this.container.appendChild(resultsList);
     }
 
     render() {
@@ -168,90 +129,160 @@ class CategoryTree {
         categoriesList.appendChild(addRootButton);
         
         this.data.forEach(category => {
-            const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'category-item';
-            categoryDiv.draggable = true;
-            categoryDiv.dataset.id = category.id;
-            
-            categoryDiv.innerHTML = `
-                <div class="category-header">
-                    <h3>${this.escapeHtml(category.name)}</h3>
-                    <div class="category-actions">
-                        <button class="edit-category">Edit</button>
-                        <button class="delete-category">Delete</button>
-                        <button class="add-subcategory">Add Subcategory</button>
-                        <button class="add-artifact">Add Artifact</button>
-                    </div>
-                </div>
-            `;
-
-            // Setup category action buttons
-            const actions = categoryDiv.querySelector('.category-actions');
-            actions.querySelector('.edit-category').onclick = (e) => {
-                e.stopPropagation();
-                this.editCategory(category.id, category.name);
-            };
-            actions.querySelector('.delete-category').onclick = (e) => {
-                e.stopPropagation();
-                this.deleteCategory(category.id);
-            };
-            actions.querySelector('.add-subcategory').onclick = (e) => {
-                e.stopPropagation();
-                this.addSubcategory(category.id);
-            };
-            actions.querySelector('.add-artifact').onclick = (e) => {
-                e.stopPropagation();
-                this.addArtifact(category.id);
-            };
-
-            if (category.artifacts && category.artifacts.length > 0) {
-                const artifactsList = document.createElement('div');
-                artifactsList.className = 'category-artifacts';
-                
-                category.artifacts.forEach(artifact => {
-                    const artifactDiv = document.createElement('div');
-                    artifactDiv.className = 'artifact-item';
-                    artifactDiv.innerHTML = `
-                        <div class="artifact-header">
-                            <h4>${this.escapeHtml(artifact.title)}</h4>
-                            <div class="artifact-actions">
-                                <button class="delete-artifact">Delete</button>
-                            </div>
-                        </div>
-                        <div class="artifact-details">
-                            <p>${this.escapeHtml(artifact.description)}</p>
-                            <div class="artifact-info">
-                                <span>Author: ${this.escapeHtml(artifact.author)}</span>
-                                <span>Version: ${this.escapeHtml(artifact.currentVersion)}</span>
-                                <span>Type: ${this.escapeHtml(artifact.documentationType)}</span>
-                                <a href="${artifact.url}" target="_blank">View Resource</a>
-                            </div>
-                            <div class="artifact-tech">
-                                <span>Language: ${this.escapeHtml(artifact.programmingLanguage)}</span>
-                                <span>Framework: ${this.escapeHtml(artifact.framework)}</span>
-                                <span>License: ${this.escapeHtml(artifact.licenseType)}</span>
-                            </div>
-                        </div>
-                    `;
-
-                    // Setup delete artifact button
-                    const deleteBtn = artifactDiv.querySelector('.delete-artifact');
-                    deleteBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        this.deleteArtifact(artifact.id);
-                    };
-
-                    artifactsList.appendChild(artifactDiv);
-                });
-                
-                categoryDiv.appendChild(artifactsList);
-            }
-
-            categoriesList.appendChild(categoryDiv);
+            categoriesList.appendChild(this.renderCategory(category));
         });
 
         this.container.appendChild(categoriesList);
         this.setupAddRootCategoryButton();
+    }
+
+    renderCategory(category, level = 0) {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'category-item';
+        categoryDiv.draggable = true;
+        categoryDiv.dataset.id = category.id;
+        categoryDiv.style.marginLeft = level > 0 ? `${level * 20}px` : '0';
+        
+        categoryDiv.innerHTML = `
+            <div class="category-header">
+                <h3>${this.escapeHtml(category.name)}</h3>
+                <div class="category-actions">
+                    <button class="edit-category">Edit</button>
+                    <button class="delete-category">Delete</button>
+                    <button class="add-subcategory">Add Subcategory</button>
+                    <button class="add-artifact">Add Artifact</button>
+                </div>
+            </div>
+        `;
+
+        // Setup category action buttons
+        const actions = categoryDiv.querySelector('.category-actions');
+        actions.querySelector('.edit-category').onclick = (e) => {
+            e.stopPropagation();
+            this.editCategory(category.id, category.name);
+        };
+        actions.querySelector('.delete-category').onclick = (e) => {
+            e.stopPropagation();
+            this.deleteCategory(category.id);
+        };
+        actions.querySelector('.add-subcategory').onclick = (e) => {
+            e.stopPropagation();
+            this.addSubcategory(category.id);
+        };
+        actions.querySelector('.add-artifact').onclick = (e) => {
+            e.stopPropagation();
+            this.addArtifact(category.id);
+        };
+
+        // Render artifacts if any
+        if (category.artifacts && category.artifacts.length > 0) {
+            const artifactsList = document.createElement('div');
+            artifactsList.className = 'category-artifacts';
+            
+            category.artifacts.forEach(artifact => {
+                artifactsList.appendChild(this.renderArtifact(artifact));
+            });
+            
+            categoryDiv.appendChild(artifactsList);
+        }
+
+        // Render subcategories recursively
+        if (category.subcategories && category.subcategories.length > 0) {
+            const subcategoriesDiv = document.createElement('div');
+            subcategoriesDiv.className = 'subcategories';
+            
+            category.subcategories.forEach(subcategory => {
+                subcategoriesDiv.appendChild(this.renderCategory(subcategory, level + 1));
+            });
+            
+            categoryDiv.appendChild(subcategoriesDiv);
+        }
+
+        return categoryDiv;
+    }
+
+    renderArtifact(artifact) {
+        const artifactDiv = document.createElement('div');
+        artifactDiv.className = 'artifact-item';
+        artifactDiv.draggable = true;
+        artifactDiv.dataset.id = artifact.id;
+        artifactDiv.innerHTML = `
+            <div class="artifact-header">
+                <h4>${this.escapeHtml(artifact.title)}</h4>
+                <div class="artifact-actions">
+                    <button class="delete-artifact">Delete</button>
+                </div>
+            </div>
+            <div class="artifact-details">
+                <p>${this.escapeHtml(artifact.description)}</p>
+                <div class="artifact-info">
+                    <span>Author: ${this.escapeHtml(artifact.author)}</span>
+                    <span>Version: ${this.escapeHtml(artifact.currentVersion)}</span>
+                    <span>Type: ${this.escapeHtml(artifact.documentationType)}</span>
+                    <a href="${artifact.url}" target="_blank">View Resource</a>
+                </div>
+                <div class="artifact-tech">
+                    <span>Language: ${this.escapeHtml(artifact.programmingLanguage)}</span>
+                    <span>Framework: ${this.escapeHtml(artifact.framework)}</span>
+                    <span>License: ${this.escapeHtml(artifact.licenseType)}</span>
+                </div>
+            </div>
+        `;
+
+        // Setup delete artifact button
+        const deleteBtn = artifactDiv.querySelector('.delete-artifact');
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.deleteArtifact(artifact.id);
+        };
+
+        return artifactDiv;
+    }
+
+    async loadCategoryTreeWithArtifacts(filteredArtifacts) {
+        try {
+            // Get the full category tree
+            const response = await fetch(`${this.apiBaseUrl}/Categories`);
+            if (!response.ok) throw new Error('Failed to load categories');
+            const categories = await response.json();
+
+            // Create a set of artifact IDs for quick lookup
+            const filteredArtifactIds = new Set(filteredArtifacts.map(a => a.id));
+
+            // Filter the category tree to only include categories that contain filtered artifacts
+            const filterCategory = (category) => {
+                // Keep track of whether this category or its subcategories contain matching artifacts
+                let hasMatchingArtifacts = false;
+
+                // Filter artifacts in this category
+                if (category.artifacts) {
+                    category.artifacts = category.artifacts.filter(artifact => 
+                        filteredArtifactIds.has(artifact.id)
+                    );
+                    hasMatchingArtifacts = category.artifacts.length > 0;
+                }
+
+                // Recursively filter subcategories
+                if (category.subcategories) {
+                    category.subcategories = category.subcategories
+                        .map(filterCategory)
+                        .filter(sub => sub !== null);
+                    hasMatchingArtifacts = hasMatchingArtifacts || category.subcategories.length > 0;
+                }
+
+                // Return the category if it has matching artifacts, null otherwise
+                return hasMatchingArtifacts ? category : null;
+            };
+
+            // Filter the entire tree
+            this.data = categories
+                .map(filterCategory)
+                .filter(category => category !== null);
+
+            this.render();
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 
     setupAddRootCategoryButton() {
@@ -463,43 +494,82 @@ class CategoryTree {
     setupEventListeners() {
         // Drag and drop functionality
         this.container.addEventListener('dragstart', (e) => {
-            const categoryDiv = e.target.closest('.category-item');
-            if (categoryDiv) {
-                this.draggedItem = categoryDiv;
-                e.dataTransfer.setData('text/plain', categoryDiv.dataset.id);
-                categoryDiv.classList.add('dragging');
+            const artifactItem = e.target.closest('.artifact-item');
+            const categoryItem = e.target.closest('.category-item');
+            
+            if (artifactItem) {
+                this.draggedItem = artifactItem;
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    id: artifactItem.dataset.id,
+                    type: 'artifact'
+                }));
+                artifactItem.classList.add('dragging');
+            } else if (categoryItem) {
+                this.draggedItem = categoryItem;
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    id: categoryItem.dataset.id,
+                    type: 'category'
+                }));
+                categoryItem.classList.add('dragging');
             }
         });
 
         this.container.addEventListener('dragover', (e) => {
             e.preventDefault();
-            const categoryDiv = e.target.closest('.category-item');
-            if (categoryDiv && this.draggedItem && categoryDiv !== this.draggedItem) {
-                categoryDiv.classList.add('drag-over');
+            const dropTarget = e.target.closest('.category-item');
+            if (dropTarget) {
+                dropTarget.classList.add('drag-over');
+                
+                // Show position indicators
+                this.showPositionIndicators(e, dropTarget);
             }
         });
 
         this.container.addEventListener('dragleave', (e) => {
-            const categoryDiv = e.target.closest('.category-item');
-            if (categoryDiv) {
-                categoryDiv.classList.remove('drag-over');
+            const dropTarget = e.target.closest('.category-item');
+            if (dropTarget) {
+                dropTarget.classList.remove('drag-over');
+                this.hidePositionIndicators();
             }
         });
 
         this.container.addEventListener('drop', async (e) => {
             e.preventDefault();
-            const categoryDiv = e.target.closest('.category-item');
-            if (categoryDiv && this.draggedItem) {
-                const draggedId = parseInt(this.draggedItem.dataset.id);
-                const dropTargetId = parseInt(categoryDiv.dataset.id);
+            const dropTarget = e.target.closest('.category-item');
+            if (!dropTarget) return;
 
-                if (draggedId !== dropTargetId) {
-                    const categories = this.container.querySelectorAll('.category-item');
-                    const newPosition = Array.from(categories).indexOf(categoryDiv);
-                    await this.updateCategoryPosition(draggedId, newPosition);
+            dropTarget.classList.remove('drag-over');
+            this.hidePositionIndicators();
+            
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            
+            // Calculate drop position
+            const position = this.calculateDropPosition(e, dropTarget);
+            
+            if (data.type === 'artifact') {
+                if (dropTarget) {
+                    await this.moveArtifact(data.id, dropTarget.dataset.id, position);
                 }
+            } else if (data.type === 'category') {
+                if (dropTarget && this.draggedItem) {
+                    const draggedId = parseInt(data.id);
+                    const targetId = parseInt(dropTarget.dataset.id);
 
-                categoryDiv.classList.remove('drag-over');
+                    if (draggedId !== targetId) {
+                        // Check if we're not trying to move a category into its own descendant
+                        const draggedPath = this.findCategoryPath(draggedId);
+                        const targetPath = this.findCategoryPath(targetId);
+                        
+                        if (!targetPath.startsWith(draggedPath)) {
+                            await this.moveCategory(draggedId, targetId, position);
+                        } else {
+                            alert('Cannot move a category into its own descendant');
+                        }
+                    }
+                }
+            }
+
+            if (this.draggedItem) {
                 this.draggedItem.classList.remove('dragging');
                 this.draggedItem = null;
             }
@@ -509,30 +579,116 @@ class CategoryTree {
             if (this.draggedItem) {
                 this.draggedItem.classList.remove('dragging');
                 this.draggedItem = null;
-                const dragOverItems = this.container.querySelectorAll('.drag-over');
-                dragOverItems.forEach(item => item.classList.remove('drag-over'));
             }
+            const dragOverItems = this.container.querySelectorAll('.drag-over');
+            dragOverItems.forEach(item => item.classList.remove('drag-over'));
+            this.hidePositionIndicators();
         });
     }
 
-    async updateCategoryPosition(categoryId, newPosition) {
+    // Find the path of a category in the tree
+    findCategoryPath(categoryId) {
+        const findPath = (categories, id) => {
+            for (const category of categories) {
+                if (category.id === id) {
+                    return category.path || '';
+                }
+                if (category.subcategories && category.subcategories.length > 0) {
+                    const path = findPath(category.subcategories, id);
+                    if (path) return path;
+                }
+            }
+            return '';
+        };
+        
+        return findPath(this.data, categoryId);
+    }
+
+    // Show position indicators when dragging over a category
+    showPositionIndicators(event, targetElement) {
+        this.hidePositionIndicators();
+        
+        // Create position indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'position-indicator';
+        
+        // Calculate position based on mouse Y position relative to the target
+        const rect = targetElement.getBoundingClientRect();
+        const relativeY = event.clientY - rect.top;
+        const position = Math.floor(relativeY / 20); // Approximate height of items
+        
+        // Position the indicator
+        indicator.style.top = `${position * 20}px`;
+        indicator.style.width = `${rect.width}px`;
+        
+        targetElement.appendChild(indicator);
+        targetElement.dataset.dropPosition = position;
+    }
+
+    // Hide all position indicators
+    hidePositionIndicators() {
+        const indicators = document.querySelectorAll('.position-indicator');
+        indicators.forEach(indicator => indicator.remove());
+    }
+
+    // Calculate the drop position based on mouse position
+    calculateDropPosition(event, targetElement) {
+        const position = parseInt(targetElement.dataset.dropPosition || '0');
+        delete targetElement.dataset.dropPosition;
+        return position;
+    }
+
+    async moveArtifact(artifactId, newCategoryId, position) {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/Categories/${categoryId}/position`, {
+            const response = await fetch(`${this.apiBaseUrl}/Artifacts/${artifactId}/move`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ position: newPosition })
+                body: JSON.stringify({ 
+                    newCategoryId: parseInt(newCategoryId, 10),
+                    position: position
+                })
             });
 
             if (!response.ok) {
-                throw new Error('Failed to update category position');
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to move artifact');
             }
 
-            // Reload categories to reflect the new order
-            await this.loadCategories();
+            const result = await response.json();
+            this.data = result.categories;
+            this.render();
         } catch (error) {
-            this.handleError(error);
+            console.error('Error moving artifact:', error);
+            alert(error.message);
+        }
+    }
+
+    async moveCategory(categoryId, newParentId, position) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/Categories/${categoryId}/move-to`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    newParentId: parseInt(newParentId, 10),
+                    position: position
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to move category');
+            }
+
+            const result = await response.json();
+            this.data = result.categories;
+            this.render();
+        } catch (error) {
+            console.error('Error moving category:', error);
+            alert(error.message);
         }
     }
 

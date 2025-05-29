@@ -195,6 +195,92 @@ namespace CourseWork.API.Controllers
             }
         }
 
+        [HttpPut("{id}/move-to")]
+        public IActionResult MoveCategoryTo(int id, [FromBody] MoveCategoryToRequest request)
+        {
+            try
+            {
+                var category = _unitOfWork.CategoryRepository.GetById(id);
+                if (category == null)
+                    return NotFound(new { message = $"Category with ID {id} not found" });
+
+                var targetCategory = _unitOfWork.CategoryRepository.GetById(request.NewParentId);
+                if (targetCategory == null)
+                    return NotFound(new { message = $"Target category with ID {request.NewParentId} not found" });
+
+                // Check if target is not a descendant of the category being moved
+                if (targetCategory.Path.StartsWith(category.Path))
+                    return BadRequest(new { message = "Cannot move a category into its own descendant" });
+
+                // Get all categories in the target parent to manage positions
+                var siblingCategories = _unitOfWork.CategoryRepository.GetAll()
+                    .Where(c => c.ParentCategoryId == request.NewParentId && c.Id != id)
+                    .OrderBy(c => c.Position)
+                    .ToList();
+
+                // Update the category's parent
+                var oldParentId = category.ParentCategoryId;
+                category.ParentCategoryId = request.NewParentId;
+                
+                // Handle position if specified
+                if (request.Position.HasValue)
+                {
+                    int newPosition = Math.Min(request.Position.Value, siblingCategories.Count);
+                    newPosition = Math.Max(0, newPosition); // Ensure position is not negative
+                    
+                    // Update positions of other categories in the parent
+                    foreach (var c in siblingCategories)
+                    {
+                        if (c.Position >= newPosition)
+                        {
+                            c.Position++;
+                        }
+                    }
+                    
+                    category.Position = newPosition;
+                }
+                else
+                {
+                    // If no position specified, put at the end
+                    category.Position = siblingCategories.Count;
+                }
+
+                // Update the path for this category and all its descendants
+                string oldPath = category.Path;
+                category.Path = targetCategory.Path + "." + category.Id;
+
+                // Update paths of all descendants
+                var descendants = _unitOfWork.CategoryRepository.GetAll()
+                    .Where(c => c.Path.StartsWith(oldPath + "."))
+                    .ToList();
+
+                foreach (var descendant in descendants)
+                {
+                    descendant.Path = descendant.Path.Replace(oldPath, category.Path);
+                }
+
+                _unitOfWork.CategoryRepository.Update(category);
+                _unitOfWork.Save();
+
+                // Return the updated category tree
+                var updatedCategories = _unitOfWork.CategoryRepository.GetAll()
+                    .Where(c => c.ParentCategoryId == null)
+                    .OrderBy(c => c.Position)
+                    .ToList();
+
+                var result = updatedCategories.Select(c => MapToCategoryDto(c, true)).ToList();
+
+                return Ok(new { 
+                    message = "Category moved successfully",
+                    categories = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while moving the category", error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public IActionResult DeleteCategory(int id)
         {
